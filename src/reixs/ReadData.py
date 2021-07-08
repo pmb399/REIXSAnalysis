@@ -190,27 +190,45 @@ class REIXS(object):
             except Exception as ex:
                 print(f"Error processing Scan {scan}")
 
-            if (my.Type=='rscan' or my.Type == 'ascan') and my.Motor == 'engy':
-
+            try:
+                my.mono_energy = np.array(my.sca_data["Mono_Engy"])
+            except:
                 try:
-                    my.mono_energy = np.array(my.sca_data["Mono_Engy"])
+                    my.mono_energy = np.array(my.sca_data["Beam Engy"])
                 except:
                     try:
-                        my.mono_energy = np.array(my.sca_data.iloc[:,0])
+                        my.mono_energy = np.array(my.sca_data["Mono Ener"])
                     except:
-                        raise TypeError("Problem determining energy.")
+                        try:
+                            my.mono_energy = np.array(my.sca_data["BeamEngy"])
+                        except:
+                            raise TypeError("Problem determining energy.")
 
-            elif my.Type=='ascan' and my.Motor != 'engy':
-                pass
-
-            else:
-                raise TypeError("Trying to load scan not suitable for analysis")
                 
             try:
                 my.mesh_current = np.array(my.sca_data["Mesh"])
+            except:
+                try:
+                    my.mesh_current = np.array(my.sca_data["Mesh Curr"])
+                except:
+                    try:
+                        my.mesh_current = np.array(my.sca_data["I0_BD3"])
+                    except:
+                        raise TypeError("Problem determening mesh current")
+
+            try:
                 my.sample_current = np.array(my.sca_data["Sample"])
+            except:
+                try:
+                    my.sample_current = np.array(my.sca_data["Samp Curr"])
+                except:
+                    try:
+                        my.sample_current = np.array(my.sca_data["TEY"])
+                    except:
+                        raise TypeError("Problem determening sample current.")
+
+            try:
                 my.TEY = my.sample_current/my.mesh_current
-                
             except:
                 print("Error storing SCAs to pre-defined variables. Likely column headers have changed. You can access SCAs by column name.")
 
