@@ -66,37 +66,43 @@ class REIXS(object):
 
         self.sdd_datasets = [[]]
         self.sdd_scanNumbers = []
-        with open(f"{os.path.join(baseName,header_file)}"+"_sdd") as f_sdd:
-            next(f_sdd)
-            for line_sdd in f_sdd:
-                if line_sdd.startswith('#S '):
-                    if self.sdd_datasets[-1] != []:
-                        # we are in a new block
-                        self.sdd_datasets.append([])
-                    self.sdd_scanNumbers.append(line_sdd.strip().split()[1])
+        try:
+            with open(f"{os.path.join(baseName,header_file)}"+"_sdd") as f_sdd:
+                next(f_sdd)
+                for line_sdd in f_sdd:
+                    if line_sdd.startswith('#S '):
+                        if self.sdd_datasets[-1] != []:
+                            # we are in a new block
+                            self.sdd_datasets.append([])
+                        self.sdd_scanNumbers.append(line_sdd.strip().split()[1])
 
-                elif line_sdd.startswith('#') or line_sdd.startswith('\n'):
-                    pass
+                    elif line_sdd.startswith('#') or line_sdd.startswith('\n'):
+                        pass
 
-                else:
-                    self.sdd_datasets[-1].append(line_sdd)
+                    else:
+                        self.sdd_datasets[-1].append(line_sdd)
+        except:
+            UserWarning("No SDD file found.")
 
         self.mcp_datasets = [[]]
         self.mcp_scanNumbers = []
-        with open(f"{os.path.join(baseName,header_file)}"+"_mcpMCA") as f_mcp:
-            next(f_mcp)
-            for line_mcp in f_mcp:          
-                if line_mcp.startswith('#S '):
-                    if self.mcp_datasets[-1] != []:
-                        # we are in a new block
-                        self.mcp_datasets.append([])
-                    self.mcp_scanNumbers.append(line_mcp.strip().split()[1])
+        try:
+            with open(f"{os.path.join(baseName,header_file)}"+"_mcpMCA") as f_mcp:
+                next(f_mcp)
+                for line_mcp in f_mcp:          
+                    if line_mcp.startswith('#S '):
+                        if self.mcp_datasets[-1] != []:
+                            # we are in a new block
+                            self.mcp_datasets.append([])
+                        self.mcp_scanNumbers.append(line_mcp.strip().split()[1])
 
-                elif line_mcp.startswith('#') or line_mcp.startswith('\n'):
-                    pass
+                    elif line_mcp.startswith('#') or line_mcp.startswith('\n'):
+                        pass
 
-                else:
-                    self.mcp_datasets[-1].append(line_mcp)
+                    else:
+                        self.mcp_datasets[-1].append(line_mcp)
+        except:
+            UserWarning("No MCP file found.")
 
                     
         self.xeol_datasets = [[]]
