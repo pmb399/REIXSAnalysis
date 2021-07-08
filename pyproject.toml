@@ -4,13 +4,3 @@ requires = [
     "wheel"
 ]
 build-backend = "setuptools.build_meta"
-
-[options]
-install_requires = [
-    "numpy",
-    "pandas",
-    "bokeh",
-    "scipy",
-    "ipywidgets",
-    "ipyfilechooser"
-]
