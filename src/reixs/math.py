@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.interpolate import interp1d
+from reixs.sca import loadSCAscans
 
 def ScanAddition(basedir,file,x_stream,y_stream,*args,avg=True,norm=False,is_XAS=False,background=None):
     class added_object:
