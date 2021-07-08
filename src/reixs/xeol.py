@@ -8,20 +8,10 @@ def XEOL_background_removal(data,arg,REIXSobj,background_scan=None):
         background_data = REIXSobj.Scan(background_scan).xeol_data
         background_sum = background_data.sum(axis=0)
 
-        # Get total dwell time for background
-        tdwell = 0
-        for j in (REIXSobj.Scan(background_scan).sca_data['Dwell']):
-            tdwell += j
+        # 2 Normalize to average background frame
+        background_spec = np.true_divide(background_sum,len(background_data))
 
-        # 2 Normalize to 1s background exposure
-        background_norm = np.true_divide(background_sum,tdwell)
-
-        # 3 Get dwell time per slice in actual scan - assume dwell is const
-        # and scale to spec exposure time
-        dwell_scan = data[arg].sca_data['Dwell'].iloc[0]
-        background_spec = background_norm*dwell_scan
-
-        # 4 Subtract the background from the actual spectrum
+        # 3 Subtract the background from the actual spectrum
         xeol_data = data[arg].xeol_data
         # To do so, need to broadcast background into shape
         xeol_subtracted = np.subtract(xeol_data,background_spec)
