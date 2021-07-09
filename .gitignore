@@ -1,6 +1,8 @@
 # Do not upload the bundled tar archive
 *.tar.gz
 
+*.DS_Store
+
 #Do not upload the egg-info directory
 **/*.egg-info/
 
