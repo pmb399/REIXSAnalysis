@@ -81,7 +81,10 @@ class REIXS(object):
 
                     else:
                         self.sdd_datasets[-1].append(line_sdd)
+
+            self.SDD = True
         except:
+            self.SDD = False
             UserWarning("No SDD file found.")
 
         self.mcp_datasets = [[]]
@@ -101,7 +104,10 @@ class REIXS(object):
 
                     else:
                         self.mcp_datasets[-1].append(line_mcp)
+
+            self.MCP = True
         except:
+            self.MCP = False
             UserWarning("No MCP file found.")
 
                     
@@ -130,7 +136,7 @@ class REIXS(object):
                 print("Scan Number Mismatch in Files")
 
         except:
-            pass
+            self.XEOL = False
 
 
         if self.scanNumbers != self.sdd_scanNumbers:
@@ -234,15 +240,17 @@ class REIXS(object):
 
 
             ## Load XAS / PFY data
-            my.sdd_data = np.loadtxt(self.sdd_datasets[my.scanl],skiprows=1024,dtype='float')
-            my.sdd_energy = np.loadtxt(self.sdd_datasets[my.scanl], max_rows=1024)
+            if self.SDD == True:
+                my.sdd_data = np.loadtxt(self.sdd_datasets[my.scanl],skiprows=1024,dtype='float')
+                my.sdd_energy = np.loadtxt(self.sdd_datasets[my.scanl], max_rows=1024)
 
             ## Load the XES / MCP data
-            my.mcp_energy = np.loadtxt(self.mcp_datasets[my.scanl], max_rows=1024, dtype='float')
-            my.mcp_data = np.loadtxt(self.mcp_datasets[my.scanl],skiprows=1024,unpack=True)
+            if self.MCP == True:
+                my.mcp_energy = np.loadtxt(self.mcp_datasets[my.scanl], max_rows=1024, dtype='float')
+                my.mcp_data = np.loadtxt(self.mcp_datasets[my.scanl],skiprows=1024,unpack=True)
             
             ## Load XEOL data
-            if hasattr(self,"XEOL"):
+            if self.XEOL==True:
                 my.xeol_energy = np.loadtxt(self.xeol_datasets[my.scanl],max_rows=2048)
                 my.xeol_background = np.loadtxt(self.xeol_datasets[my.scanl],skiprows=2048,max_rows=2048)
                 my.xeol_data = np.loadtxt(self.xeol_datasets[my.scanl],skiprows=4096)
