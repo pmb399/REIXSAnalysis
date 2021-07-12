@@ -258,20 +258,8 @@ class Load2d:
                 
                 p = figure(tooltips=[("x", "$x"), ("y", "$y"), ("value", "@image")],tools="pan,wheel_zoom,box_zoom,reset,hover,crosshair,save")
                 p.x_range.range_padding = p.y_range.range_padding = 0
-                
-                xmin = v.x_data.min()
-                xmax = v.x_data.max()
-                ymin = v.y_data.min()
-                ymax = v.y_data.max()
-                
-                x_points = int(np.ceil((xmax-xmin)/np.diff(v.x_data).min()))
-                y_points = int(np.ceil((ymax-ymin)/np.diff(v.y_data).min()))
-                
-                f = interp2d(v.x_data,v.y_data,v.detector)
-                
-                new_x = np.linspace(xmin,xmax,x_points)
-                new_y = np.linspace(ymin,ymax,y_points)
-                new_z = f(new_x,new_y)                
+                           
+                xmin,xmax,ymin,ymax,new_x,new_y,new_z= self.grid_data(v)
 
                 # must give a vector of image data for image parameter
                 color_mapper = LinearColorMapper(palette = "Viridis256",
@@ -296,28 +284,46 @@ class Load2d:
                 p.toolbar.logo=None
                 p.xaxis.axis_label = str(self.x_stream[i])
                 p.yaxis.axis_label = f"{self.y_stream[i]}"
-                                
+
                 show(p)
+
+    def grid_data(self,v):
+        xmin = v.x_data.min()
+        xmax = v.x_data.max()
+        ymin = v.y_data.min()
+        ymax = v.y_data.max()
+        
+        x_points = int(np.ceil((xmax-xmin)/np.diff(v.x_data).min()))
+        y_points = int(np.ceil((ymax-ymin)/np.diff(v.y_data).min()))
+        
+        f = interp2d(v.x_data,v.y_data,v.detector)
+        
+        new_x = np.linspace(xmin,xmax,x_points)
+        new_y = np.linspace(ymin,ymax,y_points)
+        new_z = f(new_x,new_y)
+
+        return xmin,xmax,ymin,ymax,new_x,new_y,new_z
                                            
     def export(self,filename):
         with open(f"{filename}.txt_scale", "a") as f:
             with open(f"{filename}.txt_matrix","a") as g:
                 for i,val in enumerate(self.data):
                     for k,v in val.items():
+                        xmin,xmax,ymin,ymax,new_x,new_y,new_z= self.grid_data(v)
                         f.write("========================\n")
                         f.write(f"F~{self.filename[i]}_S{v.scan}_{self.detector[i]}_{self.x_stream[i]}_{self.y_stream[i]}\n")
-                        
                         f.write("========================\n")
+
                         g.write("========================\n")
                         g.write(f"F~{self.filename[i]}_S{v.scan}_{self.detector[i]}_{self.x_stream[i]}_{self.y_stream[i]}\n")
                         g.write("========================\n")
 
-                        f.write("=== Motor Scale ===\n")
-                        np.savetxt(f,v.x_data)
-                        f.write("=== Detector Scale ===\n")
-                        np.savetxt(f,v.y_data)
+                        f.write("=== Motor Scale Gridded ===\n")
+                        np.savetxt(f,new_x)
+                        f.write("=== Detector Scale Gridded ===\n")
+                        np.savetxt(f,new_y)
                         g.write("=== Image ===\n")
-                        np.savetxt(g,v.detector,fmt="%.9g")
+                        np.savetxt(g,new_z,fmt="%.9g")
                         
         print(f"Successfully wrote Image data to {filename}.txt")
         
