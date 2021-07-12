@@ -24,7 +24,7 @@ from reixs.edges import EdgeDict
 from reixs.ReadData import REIXS
 from reixs.util import COLORP
 from reixs.xeol import *
-from reixs.math import *
+from reixs.math import ScanAddition,ScanSubtraction
 from reixs.sca import loadSCAscans
 from reixs.mca import loadMCAscans
                 
@@ -45,14 +45,14 @@ class Load1d:
         self.x_stream.append(x_stream)
         self.filename.append(file)
         
-    def addScans(self,basedir,file,x_stream,y_stream,*args,avg=False,norm=False,is_XAS=False,background=None):      
-        self.data.append(ScanAddition(basedir,file,x_stream,y_stream,*args,avg=avg,norm=norm,is_XAS=is_XAS,background=background))
+    def addScans(self,basedir,file,x_stream,y_stream,*args,avg=False,norm=False,is_XAS=False,background=None,offset=None,coffset=None):      
+        self.data.append(ScanAddition(basedir,file,x_stream,y_stream,*args,avg=avg,norm=norm,is_XAS=is_XAS,background=background,offset=offset,coffset=coffset))
         self.x_stream.append(x_stream)
         self.type.append(y_stream)
         self.filename.append(file)
         
-    def subtractScans(self,basedir,file,x_stream,y_stream,*args,avg=False,norm=False,is_XAS=False,background=None):      
-        self.data.append(ScanSubtraction(basedir,file,x_stream,y_stream,*args,avg=avg,norm=norm,is_XAS=is_XAS,background=background))
+    def subtractScans(self,basedir,file,x_stream,y_stream,*args,avg=False,norm=False,is_XAS=False,background=None,offset=None,coffset=None):      
+        self.data.append(ScanSubtraction(basedir,file,x_stream,y_stream,*args,avg=avg,norm=norm,is_XAS=is_XAS,background=background,offset=offset,coffset=coffset))
         self.x_stream.append(x_stream)
         self.type.append(y_stream)
         self.filename.append(file)
@@ -158,13 +158,13 @@ class XASLoader(Load1d):
         super().plot(linewidth=linewidth,title=title,xlabel=xlabel)  
 
         
-    def addXAS(self,basedir,file,y_stream,*args,avg=True,norm=True,background=None):
+    def add(self,basedir,file,y_stream,*args,avg=True,norm=True,background=None,offset=None,coffset=None):
         x_stream = "Mono Energy"
-        super().addScans(basedir,file,x_stream,y_stream,*args,avg=avg,norm=norm,is_XAS=True,background=background)
+        super().addScans(basedir,file,x_stream,y_stream,*args,avg=avg,norm=norm,is_XAS=True,background=background,offset=offset,coffset=coffset)
         
-    def subtractXAS(self,basedir,file,y_stream,*args,avg=True,norm=True,background=None):
+    def subtract(self,basedir,file,y_stream,*args,avg=True,norm=True,background=None,offset=None,coffset=None):
         x_stream = "Mono Energy"
-        super().subtractScans(basedir,file,x_stream,y_stream,*args,avg=avg,norm=norm,is_XAS=True,background=background)
+        super().subtractScans(basedir,file,x_stream,y_stream,*args,avg=avg,norm=norm,is_XAS=True,background=background,offset=offset,coffset=coffset)
 
 
         
@@ -180,13 +180,13 @@ class XESLoader(Load1d):
         super().plot(linewidth=linewidth,title=title,xlabel=xlabel,ylabel=ylabel)  
 
                 
-    def addXES(self,basedir,file,y_stream,*args,avg=False,norm=False):
+    def add(self,basedir,file,y_stream,*args,avg=False,norm=False,offset=None,coffset=None):
         x_stream = "MCP Energy"
-        super().addScans(basedir,file,x_stream,y_stream,*args,avg=avg,norm=norm)
+        super().addScans(basedir,file,x_stream,y_stream,*args,avg=avg,norm=norm,offset=offset,coffset=coffset)
         
-    def subtractXES(self,basedir,file,y_stream,*args,avg=False,norm=False):
+    def subtract(self,basedir,file,y_stream,*args,avg=False,norm=False,offset=None,coffset=None):
         x_stream = "MCP Energy"
-        super().subtractScans(basedir,file,x_stream,y_stream,*args,avg=avg,norm=norm)
+        super().subtractScans(basedir,file,x_stream,y_stream,*args,avg=avg,norm=norm,offset=offset,coffset=coffset)
 
         
 class XRFLoader(Load1d):
@@ -200,13 +200,13 @@ class XRFLoader(Load1d):
         ylabel = "Counts (arb. units)"
         super().plot(linewidth=linewidth,title=title,xlabel=xlabel,ylabel=ylabel)  
    
-    def addXRF(self,basedir,file,y_stream,*args,avg=False,norm=False):
+    def add(self,basedir,file,y_stream,*args,avg=False,norm=False,offset=None,coffset=None):
         x_stream = "SDD Energy"
-        super().addScans(basedir,file,x_stream,y_stream,*args,avg=avg,norm=norm)
+        super().addScans(basedir,file,x_stream,y_stream,*args,avg=avg,norm=norm,offset=offset,coffset=coffset)
         
-    def subtractXRF(self,basedir,file,y_stream,*args,avg=False,norm=False):
+    def subtract(self,basedir,file,y_stream,*args,avg=False,norm=False,offset=None,coffset=None):
         x_stream = "SDD Energy"
-        super().subtractScans(basedir,file,x_stream,y_stream,*args,avg=avg,norm=norm)
+        super().subtractScans(basedir,file,x_stream,y_stream,*args,avg=avg,norm=norm,offset=offset,coffset=coffset)
 
         
 class XEOLLoader(Load1d):
@@ -220,13 +220,13 @@ class XEOLLoader(Load1d):
         ylabel = "Counts (arb. units)"
         super().plot(linewidth=linewidth,title=title,xlabel=xlabel,ylabel=ylabel)
         
-    def addXEOL(self,basedir,file,y_stream,*args,avg=False,norm=False,background=None):
+    def add(self,basedir,file,y_stream,*args,avg=False,norm=False,background=None,offset=None,coffset=None):
         x_stream = "XEOL Energy"
-        super().addScans(basedir,file,x_stream,y_stream,*args,avg=avg,norm=norm,background=background)
+        super().addScans(basedir,file,x_stream,y_stream,*args,avg=avg,norm=norm,background=background,offset=offset,coffset=coffset)
         
-    def subtractXEOL(self,basedir,file,y_stream,*args,avg=False,norm=False,background=None):
+    def subtract(self,basedir,file,y_stream,*args,avg=False,norm=False,background=None,offset=None,coffset=None):
         x_stream = "XEOL Energy"
-        super().subtractScans(basedir,file,x_stream,y_stream,*args,avg=avg,norm=norm,background=background)
+        super().subtractScans(basedir,file,x_stream,y_stream,*args,avg=avg,norm=norm,background=background,offset=offset,coffset=coffset)
 
 
 #########################################################################################

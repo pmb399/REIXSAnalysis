@@ -1,8 +1,9 @@
 import numpy as np
 from scipy.interpolate import interp1d
 from reixs.sca import loadSCAscans
+from reixs.offset import apply_offset
 
-def ScanAddition(basedir,file,x_stream,y_stream,*args,avg=True,norm=False,is_XAS=False,background=None):
+def ScanAddition(basedir,file,x_stream,y_stream,*args,avg=True,norm=False,is_XAS=False,background=None,offset=None,coffset=None):
     class added_object:
         def __init__(self):
             pass
@@ -43,9 +44,11 @@ def ScanAddition(basedir,file,x_stream,y_stream,*args,avg=True,norm=False,is_XAS
     if norm == True:
         data[0].y_stream = np.interp(data[0].y_stream, (data[0].y_stream.min(),data[0].y_stream.max()) ,(0,1))
     
+    data[0].x_stream = apply_offset(data[0].x_stream,offset,coffset)
+    
     return data
 
-def ScanSubtraction(basedir,file,x_stream,y_stream,*args,avg=True,norm=False,is_XAS=False,background=None):
+def ScanSubtraction(basedir,file,x_stream,y_stream,*args,avg=True,norm=False,is_XAS=False,background=None,offset=None,coffset=None):
     class added_object:
         def __init__(self):
             pass
@@ -86,4 +89,6 @@ def ScanSubtraction(basedir,file,x_stream,y_stream,*args,avg=True,norm=False,is_
     if norm == True:
         data[0].y_stream = np.interp(data[0].y_stream, (data[0].y_stream.min(),data[0].y_stream.max()) ,(0,1))
     
+    data[0].x_stream = apply_offset(data[0].x_stream,offset,coffset)
+
     return data

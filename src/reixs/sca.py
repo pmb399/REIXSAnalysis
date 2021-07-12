@@ -2,6 +2,7 @@ from reixs.util import doesMatchPattern,check_key_in_dict
 from reixs.ReadData import REIXS
 from reixs.edges  import EdgeDict
 from reixs.xeol import *
+from reixs.offset import apply_offset
 import warnings
 import numpy as np
 import re, parser
@@ -167,26 +168,6 @@ def loadSCAscans(basedir,file,x_stream,y_stream,*args,norm=True,is_XAS=False,off
         # Return the calculated result
         code = parser.expr(formula).compile()
         return eval(code)
-    
-    def apply_offset(stream,offset=None,coffset=None):
-        if offset!=None:
-            offsetarray = np.array(offset)
-            coeff = np.polyfit(offsetarray[:,0],offsetarray[:,1],deg=len(offsetarray)-1)
-            
-            # Make sure that constant shift (only one tuple provided is handled as offset)
-            if len(coeff) == 1:
-                shift = offsetarray[0,1] - offsetarray[0,0]
-                stream = stream+shift
-            else:
-                stream = np.polyval(coeff,stream)
-
-        else:
-            pass
-        
-        if coffset!=None:
-            return stream+coffset
-        else:
-            return stream
 
     data = dict()
     REIXSobj = REIXS(basedir,file)
