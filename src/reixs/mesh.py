@@ -106,7 +106,7 @@ def loadMeshScans(basedir, file, x_stream, y_stream, z_stream, *args, norm=True,
         else:
             return np.array(data[arg].sca_data[y_stream])
 
-    def get_xy_data(x_stream, data, arg, background, REIXSObj):
+    def get_x_data(x_stream, data, arg, background, REIXSObj):
         if x_stream == "Mono Energy":
             return data[arg].mono_energy
 
@@ -119,11 +119,25 @@ def loadMeshScans(basedir, file, x_stream, y_stream, z_stream, *args, norm=True,
         elif x_stream == "XEOL Energy":
             return data[arg].xeol_energy
 
-        elif x_stream == "Points":
-            return np.array(range(0, len(data[arg].y_stream)), dtype=int)
-
         else:
             return np.array(data[arg].sca_data[x_stream])
+
+    def get_y_data(y_stream, data, arg, background, REIXSObj):
+        if y_stream == "Mono Energy":
+            return data[arg].mono_energy
+
+        elif y_stream == "MCP Energy":
+            return data[arg].mcp_energy
+
+        elif y_stream == "SDD Energy":
+            return data[arg].sdd_energy
+
+        elif y_stream == "XEOL Energy":
+            return data[arg].xeol_energy
+
+        else:
+            return np.array(data[arg].sca_data[y_stream])
+
 
     def math_stream(formula, data, arg, get_data, XAS_streams=None, is_XAS=False, background=None, REIXSObj=None):
         # Split the user input string at all mathematical operations
@@ -176,11 +190,11 @@ def loadMeshScans(basedir, file, x_stream, y_stream, z_stream, *args, norm=True,
         data[arg] = REIXSobj.Scan(arg)
 
         # Assign the calculated result to the y_stream of the object in data dict
-        data[arg].y_data = math_stream(y_stream, data, arg, get_xy_data)
+        data[arg].y_data = math_stream(y_stream, data, arg, get_y_data)
         data[arg].y_data = apply_offset(data[arg].y_data, yoffset, ycoffset)
 
         # Assign the calculated result to the x_stream of the object in data dict
-        data[arg].x_data = math_stream(x_stream, data, arg, get_xy_data)
+        data[arg].x_data = math_stream(x_stream, data, arg, get_x_data)
         data[arg].x_data = apply_offset(data[arg].x_data, xoffset, xcoffset)
 
         data[arg].z_data = math_stream(z_stream, data, arg, get_z_data, XAS_streams=XAS_streams,
