@@ -6,16 +6,21 @@ Further [beamline information](https://reixs.leightsource.ca/) is available on t
 
 ## Installation
 Install the package from PyPi with the pip package manager. This is the recommended way to obtain a copy for your local machine and will install all required dependencies.
+```
     $ pip install reixs
-
+```
 You will also need [Jupyter Notebook](https://github.com/jupyter) together with python 3 on your local machine.
 
 In the case that certain widgets aren't rendered properly, make sure yo enable the appropriate jupyter extensions
+```
     $ jupyter nbextension enable --py widgetsnbextension
+```
 
 ## Running
 Launch your local jupyter installation with
+```
     $ jupyter notebook
+```
 
 ## Examples
 ### Load the required module
