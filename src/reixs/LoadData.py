@@ -49,14 +49,14 @@ class Load1d:
         self.x_stream.append(x_stream)
         self.filename.append(file)
 
-    def addScans(self, basedir, file, x_stream, y_stream, *args, avg=False, norm=False, is_XAS=False, background=None, offset=None, coffset=None):
+    def add(self, basedir, file, x_stream, y_stream, *args, avg=False, norm=False, is_XAS=False, background=None, offset=None, coffset=None):
         self.data.append(ScanAddition(basedir, file, x_stream, y_stream, *args, avg=avg,
                          norm=norm, is_XAS=is_XAS, background=background, offset=offset, coffset=coffset))
         self.x_stream.append(x_stream)
         self.type.append(y_stream)
         self.filename.append(file)
 
-    def subtractScans(self, basedir, file, x_stream, y_stream, *args, avg=False, norm=False, is_XAS=False, background=None, offset=None, coffset=None):
+    def subtract(self, basedir, file, x_stream, y_stream, *args, avg=False, norm=False, is_XAS=False, background=None, offset=None, coffset=None):
         self.data.append(ScanSubtraction(basedir, file, x_stream, y_stream, *args, avg=avg,
                          norm=norm, is_XAS=is_XAS, background=background, offset=offset, coffset=coffset))
         self.x_stream.append(x_stream)
@@ -169,12 +169,12 @@ class XASLoader(Load1d):
 
     def add(self, basedir, file, y_stream, *args, avg=True, norm=True, background=None, offset=None, coffset=None):
         x_stream = "Mono Energy"
-        super().addScans(basedir, file, x_stream, y_stream, *args, avg=avg, norm=norm,
+        super().add(basedir, file, x_stream, y_stream, *args, avg=avg, norm=norm,
                          is_XAS=True, background=background, offset=offset, coffset=coffset)
 
     def subtract(self, basedir, file, y_stream, *args, avg=True, norm=True, background=None, offset=None, coffset=None):
         x_stream = "Mono Energy"
-        super().subtractScans(basedir, file, x_stream, y_stream, *args, avg=avg,
+        super().subtract(basedir, file, x_stream, y_stream, *args, avg=avg,
                               norm=norm, is_XAS=True, background=background, offset=offset, coffset=coffset)
 
 
@@ -192,12 +192,12 @@ class XESLoader(Load1d):
 
     def add(self, basedir, file, y_stream, *args, avg=False, norm=False, offset=None, coffset=None):
         x_stream = "MCP Energy"
-        super().addScans(basedir, file, x_stream, y_stream, *args,
+        super().add(basedir, file, x_stream, y_stream, *args,
                          avg=avg, norm=norm, offset=offset, coffset=coffset)
 
     def subtract(self, basedir, file, y_stream, *args, avg=False, norm=False, offset=None, coffset=None):
         x_stream = "MCP Energy"
-        super().subtractScans(basedir, file, x_stream, y_stream, *
+        super().subtract(basedir, file, x_stream, y_stream, *
                               args, avg=avg, norm=norm, offset=offset, coffset=coffset)
 
 
@@ -215,12 +215,12 @@ class XRFLoader(Load1d):
 
     def add(self, basedir, file, y_stream, *args, avg=False, norm=False, offset=None, coffset=None):
         x_stream = "SDD Energy"
-        super().addScans(basedir, file, x_stream, y_stream, *args,
+        super().add(basedir, file, x_stream, y_stream, *args,
                          avg=avg, norm=norm, offset=offset, coffset=coffset)
 
     def subtract(self, basedir, file, y_stream, *args, avg=False, norm=False, offset=None, coffset=None):
         x_stream = "SDD Energy"
-        super().subtractScans(basedir, file, x_stream, y_stream, *
+        super().subtract(basedir, file, x_stream, y_stream, *
                               args, avg=avg, norm=norm, offset=offset, coffset=coffset)
 
 
@@ -232,18 +232,18 @@ class XEOLLoader(Load1d):
 
     def plot(self, linewidth=4):
         title = 'Summed XEOL spectra'
-        xlabel = "Uncalibrated XEOL Energy (eV)"
+        xlabel = "Uncalibrated XEOL Wavelength (nm)"
         ylabel = "Counts (arb. units)"
         super().plot(linewidth=linewidth, title=title, xlabel=xlabel, ylabel=ylabel)
 
     def add(self, basedir, file, y_stream, *args, avg=False, norm=False, background=None, offset=None, coffset=None):
         x_stream = "XEOL Energy"
-        super().addScans(basedir, file, x_stream, y_stream, *args, avg=avg,
+        super().add(basedir, file, x_stream, y_stream, *args, avg=avg,
                          norm=norm, background=background, offset=offset, coffset=coffset)
 
     def subtract(self, basedir, file, y_stream, *args, avg=False, norm=False, background=None, offset=None, coffset=None):
         x_stream = "XEOL Energy"
-        super().subtractScans(basedir, file, x_stream, y_stream, *args, avg=avg,
+        super().subtract(basedir, file, x_stream, y_stream, *args, avg=avg,
                               norm=norm, background=background, offset=offset, coffset=coffset)
 
 
