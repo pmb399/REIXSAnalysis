@@ -137,7 +137,7 @@ class Load1d:
 
         self.exportfile = FileChooser(current_dir)
         self.exportfile.use_dir_icons = True
-        self.exportfile.filter_pattern = '*.csv'
+        #self.exportfile.filter_pattern = '*.csv'
 
         button = widgets.Button(
             description='Save data file',
@@ -355,7 +355,7 @@ class Load2d:
 
         self.exportfile = FileChooser(current_dir)
         self.exportfile.use_dir_icons = True
-        self.exportfile.filter_pattern = '*.txt'
+        #self.exportfile.filter_pattern = '*.txt'
 
         button = widgets.Button(
             description='Save data file',
@@ -498,7 +498,7 @@ class LoadMesh:
 
         self.exportfile = FileChooser(current_dir)
         self.exportfile.use_dir_icons = True
-        self.exportfile.filter_pattern = '*.txt'
+        #self.exportfile.filter_pattern = '*.txt'
 
         button = widgets.Button(
             description='Save data file',
