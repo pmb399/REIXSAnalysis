@@ -1,9 +1,11 @@
 # Scientific Modules
+from typing import Type
 import numpy as np
 import pandas as pd
 
 # Edge Dict
 from reixs.edges import EdgeDict
+from reixs.rsxs_mcp import img_to_sca,grid_stack,stack_to_mca
 
 # Utilities
 import os
@@ -105,10 +107,35 @@ class REIXS(object):
                     else:
                         self.mcp_datasets[-1].append(line_mcp)
 
-            self.MCP = True
+            self.MCPRIXS = True
+            self.MCPRSXS = False
         except:
-            self.MCP = False
-            UserWarning("No MCP file found.")
+            self.MCPRIXS = False
+            try:
+                self.mcpRSXS_data = [[]]
+                self.mcpRSXS_scanNumbers = []
+
+                with open(f"{os.path.join(baseName,header_file)}"+"_mcp") as f_mcp:
+                    next(f_mcp)
+                    for line in f_mcp:
+                        if line.startswith('#S '):
+                            if self.mcpRSXS_data[-1]!=[]:
+                                self.mcpRSXS_data.append([])
+                            
+                            self.mcpRSXS_scanNumbers.append(line.strip().split()[1])
+                            
+                        elif line.startswith('#C ') or line.startswith('#@IMG'):
+                            self.mcpRSXS_data[-1].append([])
+
+                        elif line.startswith('#') or line.startswith('\n'):
+                            pass
+
+                        else:
+                            self.mcpRSXS_data[-1][-1].append(line.strip('\n'))
+                self.MCPRSXS = True
+            except:
+                self.MCPRSXS = False
+                UserWarning("No MCP file found.")
 
                     
         self.xeol_datasets = [[]]
@@ -140,10 +167,16 @@ class REIXS(object):
 
 
         if self.scanNumbers != self.sdd_scanNumbers:
-            print("Scan Number Mismatch in Files")
+            print("Scan Number Mismatch in Files (Header)")
 
-        if self.scanNumbers != self.mcp_scanNumbers:
-            print("Scan Number Mismatch in Files")
+        if self.MCPRIXS == True and self.scanNumbers != self.mcp_scanNumbers:
+            print("Scan Number Mismatch in Files (RIXS MCP)")
+
+        if self.MCPRSXS==True and self.scanNumbers != self.mcpRSXS_scanNumbers:
+            print("Scan Number Mismatch in Files (RSXS MCP)")
+
+        if self.XEOL == True and self.scanNumbers != self.xeol_scanNumbers:
+            print("Scan Number Mismatch in Files (XEOL)")
 
         if int(self.scanNumbers[-1]) != int(len(self.scanNumbers)):
             print("Scans not labelled consecutively!")
@@ -151,9 +184,29 @@ class REIXS(object):
             print("Scans in File", len(self.scanNumbers))
             
         ## Create dictionary for scan numbers
-        self.scanIndexDict = dict()
+        self.scanIndexDictHeader = dict()
         for i,scanIndex in enumerate(self.scanNumbers):
-            self.scanIndexDict[int(scanIndex)] = i
+            self.scanIndexDictHeader[int(scanIndex)] = i
+
+        if self.SDD == True:
+            self.scanIndexDictSDD = dict()
+            for i,scanIndex in enumerate(self.sdd_scanNumbers):
+                self.scanIndexDictSDD[int(scanIndex)] = i
+
+        if self.MCPRIXS == True:
+            self.scanIndexDictRIXSMCP = dict()
+            for i,scanIndex in enumerate(self.mcp_scanNumbers):
+                self.scanIndexDictRIXSMCP[int(scanIndex)] = i
+
+        if self.MCPRSXS == True:
+            self.scanIndexDictRSXSMCP = dict()
+            for i,scanIndex in enumerate(self.mcpRSXS_scanNumbers):
+                self.scanIndexDictRSXSMCP[int(scanIndex)] = i
+
+        if self.XEOL == True:
+            self.scanIndexDictXEOL = dict()
+            for i,scanIndex in enumerate(self.xeol_scanNumbers):
+                self.scanIndexDictXEOL[int(scanIndex)] = i
 
     def Scan(self,scan):
         """Returns all data associated with a specific Scan.
@@ -183,19 +236,40 @@ class REIXS(object):
             
             try:
                 my.scan  = scan
-                my.scanl = self.scanIndexDict[scan]
-                my.Type  = self.scanType[my.scanl]
-                my.Motor = self.scanMotor[my.scanl]
+                my.scanl = self.scanIndexDictHeader[scan]
+            except:
+                raise ValueError("Scan not defined in header file.")
 
-                ## Load header file / SCA data
-                my.sca_data = pd.DataFrame(self.datasets[my.scanl][1:]).iloc[:,0].str.split(" ", expand=True)
-                header  = pd.DataFrame(self.datasets[my.scanl]).iloc[0].str.split("  ", expand=True).transpose()
-                my.sca_data.columns = header[0]
-                my.sca_data = my.sca_data.apply(pd.to_numeric, errors='coerce')
+            try:
+                my.scansdd = self.scanIndexDictSDD[scan]
+                my.SDD = True
+            except:
+                my.SDD = False
+
+            try:
+                my.scanmcpRIXS = self.scanIndexDictRIXSMCP[scan]
+                my.MCPRIXS = True
+            except:
+                my.MCPRIXS = False
+
+            try:
+                my.scanmcpRSXS = self.scanIndexDictRSXSMCP[scan]
+                my.MCPRSXS = True
+            except:
+                my.MCPRSXS = False
+
+            try:
+                my.scanxeol = self.scanIndexDictXEOL[scan]
+                my.XEOL = True
+            except:
+                my.XEOL = False
+
+            ## Load header file / SCA data
+            my.sca_data = pd.DataFrame(self.datasets[my.scanl][1:]).iloc[:,0].str.split(" ", expand=True)
+            header  = pd.DataFrame(self.datasets[my.scanl]).iloc[0].str.split("  ", expand=True).transpose()
+            my.sca_data.columns = header[0]
+            my.sca_data = my.sca_data.apply(pd.to_numeric, errors='coerce')
                 
-            except Exception as ex:
-                print(f"Error processing Scan {scan}")
-
             try:
                 my.mono_energy = np.array(my.sca_data["Mono_Engy"])
             except:
@@ -240,20 +314,48 @@ class REIXS(object):
 
 
             ## Load XAS / PFY data
-            if self.SDD == True:
-                my.sdd_data = np.loadtxt(self.sdd_datasets[my.scanl],skiprows=1024,dtype='float')
-                my.sdd_energy = np.loadtxt(self.sdd_datasets[my.scanl], max_rows=1024)
+            if my.SDD == True:
+                try:
+                    my.sdd_data = np.loadtxt(self.sdd_datasets[my.scansdd],skiprows=1024,dtype='float')
+                    my.sdd_energy = np.loadtxt(self.sdd_datasets[my.scansdd], max_rows=1024)
+                except:
+                    raise UserWarning("Could not load SDD data from file.")
 
             ## Load the XES / MCP data
-            if self.MCP == True:
-                my.mcp_energy = np.loadtxt(self.mcp_datasets[my.scanl], max_rows=1024, dtype='float')
-                my.mcp_data = np.loadtxt(self.mcp_datasets[my.scanl],skiprows=1024,unpack=True)
+            if my.MCPRIXS == True:
+                try:
+                    my.mcp_energy = np.loadtxt(self.mcp_datasets[my.scanmcpRIXS], max_rows=1024, dtype='float')
+                    my.mcp_data = np.loadtxt(self.mcp_datasets[my.scanmcpRIXS],skiprows=1024,unpack=True)
+                except:
+                    raise UserWarning("Could not RIXS MCP data from file.")
+
+            if my.MCPRSXS == True:
+                try:
+                    my.mcpRSXS_scales = dict()
+                    my.mcpRSXS_scatters = dict()
+
+                    j = 0
+                    k = 0
+                    for i in range(len(self.mcpRSXS_data[my.scanmcpRSXS])):
+                        if i % 2: # is odd i
+                            my.mcpRSXS_scatters[j] = np.loadtxt(self.mcpRSXS_data[my.scanmcpRSXS][i])
+                            j += 1
+                            
+                        else: # is even
+                            my.mcpRSXS_scales[k] = np.transpose(np.loadtxt(self.mcpRSXS_data[my.scanmcpRSXS][i]))
+                            k += 1
+
+                except:
+                    raise UserWarning("Could not load RSXS MCP data from file.")
             
             ## Load XEOL data
-            if self.XEOL==True:
-                my.xeol_energy = np.loadtxt(self.xeol_datasets[my.scanl],max_rows=2048)
-                my.xeol_background = np.loadtxt(self.xeol_datasets[my.scanl],skiprows=2048,max_rows=2048)
-                my.xeol_data = np.loadtxt(self.xeol_datasets[my.scanl],skiprows=4096)
+            if my.XEOL==True:
+                try:
+                    my.xeol_energy = np.loadtxt(self.xeol_datasets[my.scanxeol],max_rows=2048)
+                    my.xeol_background = np.loadtxt(self.xeol_datasets[my.scanxeol],skiprows=2048,max_rows=2048)
+                    my.xeol_data = np.loadtxt(self.xeol_datasets[my.scanxeol],skiprows=4096)
+                except:
+                    raise UserWarning("Could not load XEOL data from file.")
                 
 
         def MCP_norm(my):
@@ -438,4 +540,29 @@ class REIXS(object):
                 my.MCP_norm()
 
             return my.mcp_data_norm[:,mcp_lowE_idx:mcp_highE_idx].sum(axis=1)
+
+        def RSXS_MCPnorm(my):
+            my.RSXSMCP_norm = dict()
+            for k,v in my.mcpRSXS_scatters.items():
+                my.RSXSMCP_norm[k] = np.true_divide(v,my.sample_current[k])
+
+            return my.RSXSMCP_norm
                         
+        def RSXS_1dROI(my,img,x_low=None,x_high=None,y_low=None,y_high=None,axis=0):
+
+            if not(hasattr(my, 'RSXSMCP_norm')):
+                my.RSXS_MCPnorm()
+
+            return img_to_sca(my.mcpRSXS_scales,my.RSXSMCP_norm,img,x_low,x_high,y_low,y_high,axis)
+
+        def RSXS_2dROI(my,x_low=None,x_high=None,y_low=None,y_high=None,axis=0):
+            if not(hasattr(my, 'RSXSMCP_norm')):
+                my.RSXS_MCPnorm()
+
+            return stack_to_mca(my.mcpRSXS_scales,my.RSXSMCP_norm,x_low,x_high,y_low,y_high,axis)
+
+        def RSXS_Images(my):
+            if not(hasattr(my, 'RSXSMCP_norm')):
+                my.RSXS_MCPnorm()
+
+            return grid_stack(my.mcpRSXS_scales,my.RSXSMCP_norm)
