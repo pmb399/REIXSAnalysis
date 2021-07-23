@@ -11,7 +11,7 @@ Install the package from PyPi with the pip package manager. This is the recommen
 ```
 You will also need [Jupyter Notebook](https://github.com/jupyter) together with python 3 on your local machine.
 
-In the case that certain widgets aren't rendered properly, make sure yo enable the appropriate jupyter extensions
+In case that certain widgets aren't rendered properly, make sure to enable the appropriate jupyter extensions
 ```
     $ jupyter nbextension enable --py widgetsnbextension
 ```
