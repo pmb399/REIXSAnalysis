@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.interpolate import interp1d
-from reixs.sca import loadSCAscans
-from reixs.offset import apply_offset
+from .sca import loadSCAscans
+from .offset import apply_offset
 
 def ScanAddition(basedir,file,x_stream,y_stream,*args,avg=True,norm=False,is_XAS=False,background=None,offset=None,coffset=None):
     class added_object:
