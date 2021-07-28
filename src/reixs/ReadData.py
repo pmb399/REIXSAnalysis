@@ -1,14 +1,14 @@
 # Scientific Modules
-from typing import Type
 import numpy as np
 import pandas as pd
 
 # Edge Dict
-from reixs.edges import EdgeDict
-from reixs.rsxs_mcp import img_to_sca,grid_stack,stack_to_mca
+from .edges import EdgeDict
+from .rsxs_readutil import img_to_sca,grid_stack,stack_to_mca
 
 # Utilities
 import os
+import warnings
 
 ## Every scan will be an instance of a class ##
 
@@ -87,7 +87,7 @@ class REIXS(object):
             self.SDD = True
         except:
             self.SDD = False
-            UserWarning("No SDD file found.")
+            warnings.warn("No SDD file found.")
 
         self.mcp_datasets = [[]]
         self.mcp_scanNumbers = []
@@ -113,6 +113,7 @@ class REIXS(object):
             self.MCPRIXS = False
             try:
                 self.mcpRSXS_data = [[]]
+                self.mcpRSXS_scale_headers = [[]]
                 self.mcpRSXS_scanNumbers = []
 
                 with open(f"{os.path.join(baseName,header_file)}"+"_mcp") as f_mcp:
@@ -121,11 +122,17 @@ class REIXS(object):
                         if line.startswith('#S '):
                             if self.mcpRSXS_data[-1]!=[]:
                                 self.mcpRSXS_data.append([])
+                            if self.mcpRSXS_scale_headers[-1] != []:
+                                self.mcpRSXS_scale_headers.append([])
                             
                             self.mcpRSXS_scanNumbers.append(line.strip().split()[1])
                             
                         elif line.startswith('#C ') or line.startswith('#@IMG'):
                             self.mcpRSXS_data[-1].append([])
+                            if self.mcpRSXS_scale_headers[-1] == []:
+                                for i in (line.replace("\t","").strip("\n").split(' ')[1:3]):
+                                    self.mcpRSXS_scale_headers[-1].append(i)
+                                
 
                         elif line.startswith('#') or line.startswith('\n'):
                             pass
@@ -135,7 +142,7 @@ class REIXS(object):
                 self.MCPRSXS = True
             except:
                 self.MCPRSXS = False
-                UserWarning("No MCP file found.")
+                warnings.warn("No MCP file found.")
 
                     
         self.xeol_datasets = [[]]
@@ -333,6 +340,7 @@ class REIXS(object):
                 try:
                     my.mcpRSXS_scales = dict()
                     my.mcpRSXS_scatters = dict()
+                    my.mcpRSXS_axes = self.mcpRSXS_scale_headers[my.scanmcpRSXS]
 
                     j = 0
                     k = 0
