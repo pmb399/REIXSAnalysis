@@ -1,4 +1,10 @@
 import re
+from itertools import groupby
+
+#########################################################################################
+def all_list_entries_equal(iterable):
+    g = groupby(iterable)
+    return next(g, True) and not next(g, False)
 
 #########################################################################################
 def doesMatchPattern(string, patterns=[]):
@@ -12,6 +18,7 @@ def doesMatchPattern(string, patterns=[]):
 
     return False
 
+#########################################################################################
 def check_key_in_dict(key,dic):
     for k,v in dic.items():
         if key == k:
