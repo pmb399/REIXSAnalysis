@@ -1,9 +1,9 @@
 import numpy as np
 import re
 import parser
-from reixs.ReadData import REIXS
-from reixs.xeol import *
-from reixs.offset import apply_offset
+from .ReadData import REIXS
+from .xeol import *
+from .offset import apply_offset
 
 def loadMCAscans(basedir,file,x_stream,y_stream,detector,*args,norm=True,xoffset=None,xcoffset=None,yoffset=None,ycoffset=None,background=None):   
     ## Note that the data dict only gets populated locally until the appropriate

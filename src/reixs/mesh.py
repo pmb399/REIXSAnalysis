@@ -1,8 +1,8 @@
-from reixs.util import doesMatchPattern, check_key_in_dict
-from reixs.ReadData import REIXS
-from reixs.edges import EdgeDict
-from reixs.xeol import *
-from reixs.offset import apply_offset
+from .util import doesMatchPattern, check_key_in_dict
+from .ReadData import REIXS
+from .edges import EdgeDict
+from .xeol import *
+from .offset import apply_offset
 import warnings
 import numpy as np
 import re
