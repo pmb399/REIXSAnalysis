@@ -2,13 +2,13 @@ from .util import doesMatchPattern, check_key_in_dict
 from .ReadData import REIXS
 from .edges import EdgeDict
 from .xeol import *
-from .offset import apply_offset
+from .simplemath import apply_offset, take_derivative1d
 import warnings
 import numpy as np
 from .parser import math_stream
 
 
-def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, offset=None, coffset=None, background=None):
+def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, offset=None, coffset=None, background=None, deriv=None):
     special_streams = ['TEY', 'TFY', 'PFY', 'iPFY', 'XES', 'rXES', 'specPFY',
                        'XRF', 'rXRF', 'XEOL', 'rXEOL', 'POY', 'TOY']  # all special inputs
     XAS_streams = ['TEY', 'TFY', 'PFY', 'iPFY', 'specPFY', 'POY',
@@ -140,5 +140,12 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
         if norm == True:
             data[arg].y_stream = np.interp(
                 data[arg].y_stream, (data[arg].y_stream.min(), data[arg].y_stream.max()), (0, 1))
+
+        if deriv != None:
+            data[arg].y_stream = take_derivative1d(
+                data[arg].y_stream, data[arg].x_stream, deriv)
+            if norm == True:
+                data[arg].y_stream = data[arg].y_stream / \
+                    data[arg].y_stream.max()
 
     return data

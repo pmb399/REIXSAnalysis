@@ -1,7 +1,7 @@
 import numpy as np
 from .ReadData import REIXS
 from .xeol import *
-from .offset import apply_offset
+from .simplemath import apply_offset
 from .parser import math_stream
 
 

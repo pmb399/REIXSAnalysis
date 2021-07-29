@@ -1,4 +1,3 @@
-import math
 import re
 import parser
 from .util import doesMatchPattern

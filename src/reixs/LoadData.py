@@ -19,13 +19,13 @@ from ipyfilechooser import FileChooser
 # Edge Dict
 from .edges import EdgeDict
 
-from .util import COLORP,all_list_entries_equal
+from .util import COLORP, all_list_entries_equal
 from .xeol import *
 from .add_subtract import ScanAddition, ScanSubtraction
 from .sca import loadSCAscans
 from .mca import loadMCAscans
 from .mesh import loadMeshScans
-from .rsxs_mcp import loadRSXS1dROIscans,loadRSXS2dROIscans,loadRSXSImageStack
+from .rsxs_mcp import loadRSXS1dROIscans, loadRSXS2dROIscans, loadRSXSImageStack
 
 #########################################################################################
 #########################################################################################
@@ -38,23 +38,23 @@ class Load1d:
         self.x_stream = list()
         self.filename = list()
 
-    def load(self, basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, offset=None, coffset=None, background=None):
+    def load(self, basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, offset=None, coffset=None, background=None, deriv=None):
         self.data.append(loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=norm,
-                         is_XAS=is_XAS, offset=offset, coffset=coffset, background=background))
+                         is_XAS=is_XAS, offset=offset, coffset=coffset, background=background, deriv=deriv))
         self.type.append(y_stream)
         self.x_stream.append(x_stream)
         self.filename.append(file)
 
-    def add(self, basedir, file, x_stream, y_stream, *args, avg=False, norm=False, is_XAS=False, background=None, offset=None, coffset=None):
+    def add(self, basedir, file, x_stream, y_stream, *args, avg=False, norm=False, is_XAS=False, background=None, offset=None, coffset=None, deriv=None):
         self.data.append(ScanAddition(basedir, file, x_stream, y_stream, *args, avg=avg,
-                         norm=norm, is_XAS=is_XAS, background=background, offset=offset, coffset=coffset))
+                         norm=norm, is_XAS=is_XAS, background=background, offset=offset, coffset=coffset, deriv=deriv))
         self.x_stream.append(x_stream)
         self.type.append(y_stream)
         self.filename.append(file)
 
-    def subtract(self, basedir, file, x_stream, y_stream, *args, avg=False, norm=False, is_XAS=False, background=None, offset=None, coffset=None):
+    def subtract(self, basedir, file, x_stream, y_stream, *args, avg=False, norm=False, is_XAS=False, background=None, offset=None, coffset=None, deriv=None):
         self.data.append(ScanSubtraction(basedir, file, x_stream, y_stream, *args, avg=avg,
-                         norm=norm, is_XAS=is_XAS, background=background, offset=offset, coffset=coffset))
+                         norm=norm, is_XAS=is_XAS, background=background, offset=offset, coffset=coffset, deriv=deriv))
         self.x_stream.append(x_stream)
         self.type.append(y_stream)
         self.filename.append(file)
@@ -153,32 +153,32 @@ class Load1d:
 
 
 class XASLoader(Load1d):
-    def load(self, basedir, file, y_stream, *args, norm=True, offset=None, coffset=None, background=None):
+    def load(self, basedir, file, y_stream, *args, norm=True, offset=None, coffset=None, background=None, deriv=None):
         x_stream = 'Mono Energy'
         super().load(basedir, file, x_stream, y_stream, *args, norm=norm,
-                     is_XAS=True, offset=offset, coffset=coffset, background=background)
+                     is_XAS=True, offset=offset, coffset=coffset, background=background, deriv=deriv)
 
     def plot(self, linewidth=4):
         title = 'Absorption spectra normalized by mesh current'
         xlabel = "Incident Photon Energy (eV)"
         super().plot(linewidth=linewidth, title=title, xlabel=xlabel)
 
-    def add(self, basedir, file, y_stream, *args, avg=True, norm=True, background=None, offset=None, coffset=None):
+    def add(self, basedir, file, y_stream, *args, avg=True, norm=True, background=None, offset=None, coffset=None, deriv=None):
         x_stream = "Mono Energy"
         super().add(basedir, file, x_stream, y_stream, *args, avg=avg, norm=norm,
-                    is_XAS=True, background=background, offset=offset, coffset=coffset)
+                    is_XAS=True, background=background, offset=offset, coffset=coffset, deriv=deriv)
 
-    def subtract(self, basedir, file, y_stream, *args, avg=True, norm=True, background=None, offset=None, coffset=None):
+    def subtract(self, basedir, file, y_stream, *args, avg=True, norm=True, background=None, offset=None, coffset=None, deriv=None):
         x_stream = "Mono Energy"
         super().subtract(basedir, file, x_stream, y_stream, *args, avg=avg,
-                         norm=norm, is_XAS=True, background=background, offset=offset, coffset=coffset)
+                         norm=norm, is_XAS=True, background=background, offset=offset, coffset=coffset, deriv=deriv)
 
 
 class XESLoader(Load1d):
-    def load(self, basedir, file, y_stream, *args, norm=False, offset=None, coffset=None):
+    def load(self, basedir, file, y_stream, *args, norm=False, offset=None, coffset=None, deriv=None):
         x_stream = "MCP Energy"
         super().load(basedir, file, x_stream, y_stream, *
-                     args, norm=norm, offset=offset, coffset=coffset)
+                     args, norm=norm, offset=offset, coffset=coffset, deriv=deriv)
 
     def plot(self, linewidth=4):
         title = 'Summed MCP emission spectra'
@@ -186,22 +186,22 @@ class XESLoader(Load1d):
         ylabel = "Counts (arb. units)"
         super().plot(linewidth=linewidth, title=title, xlabel=xlabel, ylabel=ylabel)
 
-    def add(self, basedir, file, y_stream, *args, avg=False, norm=False, offset=None, coffset=None):
+    def add(self, basedir, file, y_stream, *args, avg=False, norm=False, offset=None, coffset=None, deriv=None):
         x_stream = "MCP Energy"
         super().add(basedir, file, x_stream, y_stream, *args,
-                    avg=avg, norm=norm, offset=offset, coffset=coffset)
+                    avg=avg, norm=norm, offset=offset, coffset=coffset, deriv=deriv)
 
-    def subtract(self, basedir, file, y_stream, *args, avg=False, norm=False, offset=None, coffset=None):
+    def subtract(self, basedir, file, y_stream, *args, avg=False, norm=False, offset=None, coffset=None, deriv=None):
         x_stream = "MCP Energy"
         super().subtract(basedir, file, x_stream, y_stream, *
-                         args, avg=avg, norm=norm, offset=offset, coffset=coffset)
+                         args, avg=avg, norm=norm, offset=offset, coffset=coffset, deriv=deriv)
 
 
 class XRFLoader(Load1d):
-    def load(self, basedir, file, y_stream, *args, norm=False, offset=None, coffset=None):
+    def load(self, basedir, file, y_stream, *args, norm=False, offset=None, coffset=None, deriv=None):
         x_stream = "SDD Energy"
         super().load(basedir, file, x_stream, y_stream, *
-                     args, norm=norm, offset=offset, coffset=coffset)
+                     args, norm=norm, offset=offset, coffset=coffset, deriv=deriv)
 
     def plot(self, linewidth=4):
         title = 'Summed SDD emission spectra'
@@ -209,22 +209,22 @@ class XRFLoader(Load1d):
         ylabel = "Counts (arb. units)"
         super().plot(linewidth=linewidth, title=title, xlabel=xlabel, ylabel=ylabel)
 
-    def add(self, basedir, file, y_stream, *args, avg=False, norm=False, offset=None, coffset=None):
+    def add(self, basedir, file, y_stream, *args, avg=False, norm=False, offset=None, coffset=None, deriv=None):
         x_stream = "SDD Energy"
         super().add(basedir, file, x_stream, y_stream, *args,
-                    avg=avg, norm=norm, offset=offset, coffset=coffset)
+                    avg=avg, norm=norm, offset=offset, coffset=coffset, deriv=deriv)
 
-    def subtract(self, basedir, file, y_stream, *args, avg=False, norm=False, offset=None, coffset=None):
+    def subtract(self, basedir, file, y_stream, *args, avg=False, norm=False, offset=None, coffset=None, deriv=None):
         x_stream = "SDD Energy"
         super().subtract(basedir, file, x_stream, y_stream, *
-                         args, avg=avg, norm=norm, offset=offset, coffset=coffset)
+                         args, avg=avg, norm=norm, offset=offset, coffset=coffset, deriv=deriv)
 
 
 class XEOLLoader(Load1d):
-    def load(self, basedir, file, y_stream, *args, norm=False, offset=None, coffset=None, background=None):
+    def load(self, basedir, file, y_stream, *args, norm=False, offset=None, coffset=None, background=None, deriv=None):
         x_stream = "XEOL Energy"
         super().load(basedir, file, x_stream, y_stream, *args, norm=norm,
-                     offset=offset, coffset=coffset, background=background)
+                     offset=offset, coffset=coffset, background=background, deriv=deriv)
 
     def plot(self, linewidth=4):
         title = 'Summed XEOL spectra'
@@ -232,15 +232,15 @@ class XEOLLoader(Load1d):
         ylabel = "Counts (arb. units)"
         super().plot(linewidth=linewidth, title=title, xlabel=xlabel, ylabel=ylabel)
 
-    def add(self, basedir, file, y_stream, *args, avg=False, norm=False, background=None, offset=None, coffset=None):
+    def add(self, basedir, file, y_stream, *args, avg=False, norm=False, background=None, offset=None, coffset=None, deriv=None):
         x_stream = "XEOL Energy"
         super().add(basedir, file, x_stream, y_stream, *args, avg=avg,
-                    norm=norm, background=background, offset=offset, coffset=coffset)
+                    norm=norm, background=background, offset=offset, coffset=coffset, deriv=deriv)
 
-    def subtract(self, basedir, file, y_stream, *args, avg=False, norm=False, background=None, offset=None, coffset=None):
+    def subtract(self, basedir, file, y_stream, *args, avg=False, norm=False, background=None, offset=None, coffset=None, deriv=None):
         x_stream = "XEOL Energy"
         super().subtract(basedir, file, x_stream, y_stream, *args, avg=avg,
-                         norm=norm, background=background, offset=offset, coffset=coffset)
+                         norm=norm, background=background, offset=offset, coffset=coffset, deriv=deriv)
 
 
 #########################################################################################
@@ -525,8 +525,9 @@ class ImageROILoader():
         self.filename = list()
         self.norm = list()
 
-    def load(self, basedir, file, images, axis, *args, x=[None, None], y=[None, None], norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None):
-        self.data.append(loadRSXS1dROIscans(basedir, file, images, axis, *args, x=x, y=y, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset))
+    def load(self, basedir, file, images, axis, *args, x=[None, None], y=[None, None], norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None):
+        self.data.append(loadRSXS1dROIscans(basedir, file, images, axis, *args, x=x, y=y,
+                         norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv))
         self.norm.append(norm)
         self.filename.append(file)
 
@@ -534,7 +535,7 @@ class ImageROILoader():
         plot_data = defaultdict(list)
         for i, val in enumerate(self.data):
             for k, v in val.items():
-                for image,imagevalue in v.caxis.items():
+                for image, imagevalue in v.caxis.items():
                     plot_data["x_stream"].append(imagevalue)
                     plot_data["y_stream"].append(v.imagesca[image])
                     plot_data['x_name'].append(v.caxis_label)
@@ -590,7 +591,7 @@ class ImageROILoader():
                     files.append(name)
                 fileindex = files.index(name)
 
-                for image,imagevalue in v.caxis.items():
+                for image, imagevalue in v.caxis.items():
                     s1 = pd.Series(
                         imagevalue, name=f"F{fileindex+1}_S{v.scan}_I{i+1}_Img{image}-{v.caxis_label}")
                     df = df.append(s1)
@@ -639,7 +640,8 @@ class StackROILoader():
         self.norm = list()
 
     def load(self, basedir, file, axis, *args, x=[None, None], y=[None, None], norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None):
-        self.data.append(loadRSXS2dROIscans(basedir, file, axis, *args, x=x, y=y, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset))
+        self.data.append(loadRSXS2dROIscans(basedir, file, axis, *args, x=x, y=y, norm=norm,
+                         xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset))
         self.norm.append(norm)
         self.filename.append(file)
 
@@ -688,9 +690,9 @@ class StackROILoader():
                         g.write("========================\n")
 
                         f.write("=== Scale x Gridded ===\n")
-                        np.savetxt(f, v.mcp_x,fmt="%.9g")
+                        np.savetxt(f, v.mcp_x, fmt="%.9g")
                         f.write("=== Scale y Gridded ===\n")
-                        np.savetxt(f, v.mcp_y,fmt="%.9g")
+                        np.savetxt(f, v.mcp_y, fmt="%.9g")
                         g.write("=== Image ===\n")
                         np.savetxt(g, v.imagemca, fmt="%.9g")
 
@@ -740,7 +742,7 @@ class ImageStackLoader():
             r.data_source.data['y'] = [v.y_min[f]]
             r.data_source.data['dw'] = [v.x_max[f]-v.x_min[f]]
             r.data_source.data['dh'] = [v.y_max[f]-v.y_min[f]]
-        
+
             push_notebook(handle=s)
 
         for i, val in enumerate(self.data):
@@ -752,9 +754,11 @@ class ImageStackLoader():
                 # must give a vector of image data for image parameter
                 color_mapper = LinearColorMapper(palette="Viridis256")
 
-                simage = ColumnDataSource(data=dict(image=[v.imagemca[0]], x=[v.x_min[0]], y=[v.y_min[0]], dw=[v.x_max[0]-v.x_min[0]], dh=[v.y_max[0]-v.y_min[0]],))
+                simage = ColumnDataSource(data=dict(image=[v.imagemca[0]], x=[v.x_min[0]], y=[
+                                          v.y_min[0]], dw=[v.x_max[0]-v.x_min[0]], dh=[v.y_max[0]-v.y_min[0]],))
 
-                r = p.image(image='image',source=simage,x='x',y='y',dw='dw',dh='dh',color_mapper=color_mapper, level="image")
+                r = p.image(image='image', source=simage, x='x', y='y',
+                            dw='dw', dh='dh', color_mapper=color_mapper, level="image")
                 p.grid.grid_line_width = 0.5
 
                 # Defining properties of color mapper
@@ -769,6 +773,5 @@ class ImageStackLoader():
                 p.xaxis.axis_label = v.mcpRSXS_axes[0]
                 p.yaxis.axis_label = v.mcpRSXS_axes[1]
 
-                s = show(p,notebook_handle=True)
-                display(widgets.interact(update,f=(0,len(v.imagemca)-1)))
-
+                s = show(p, notebook_handle=True)
+                display(widgets.interact(update, f=(0, len(v.imagemca)-1)))

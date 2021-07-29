@@ -1,13 +1,14 @@
-from .offset import apply_offset
+from .simplemath import apply_offset, take_derivative1d
 from .ReadData import REIXS
 import numpy as np
 
-def loadRSXS1dROIscans(basedir, file, images, axis, *args, x=[None, None], y=[None, None], norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None):
+
+def loadRSXS1dROIscans(basedir, file, images, axis, *args, x=[None, None], y=[None, None], norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None):
 
     data = dict()
     REIXSobj = REIXS(basedir, file)
 
-    if axis not in [0,1]:
+    if axis not in [0, 1]:
         raise UserWarning("Invalid axis!")
 
     if len(args) == 0:
@@ -25,7 +26,7 @@ def loadRSXS1dROIscans(basedir, file, images, axis, *args, x=[None, None], y=[No
 
         for image in images:
             data[arg].caxis[image], data[arg].imagesca[image] = data[arg].RSXS_1dROI(image,
-                x_low=x[0], x_high=x[1], y_low=y[0], y_high=y[1], axis=axis)
+                                                                                     x_low=x[0], x_high=x[1], y_low=y[0], y_high=y[1], axis=axis)
             data[arg].imagesca[image] = apply_offset(
                 data[arg].imagesca[image], yoffset, ycoffset)
             data[arg].caxis[image] = apply_offset(
@@ -34,6 +35,13 @@ def loadRSXS1dROIscans(basedir, file, images, axis, *args, x=[None, None], y=[No
             if norm == True:
                 data[arg].imagesca[image] = data[arg].imagesca[image] / \
                     np.max(data[arg].imagesca[image])
+
+            if deriv != None:
+                data[arg].imagesca[image] = take_derivative1d(
+                    data[arg].imagesca[image], data[arg].caxis[image], deriv)
+                if norm == True:
+                    data[arg].imagesca[image] = data[arg].imagesca[image] / \
+                        data[arg].imagesca[image].max()
 
     return data
 

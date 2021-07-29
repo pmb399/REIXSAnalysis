@@ -2,7 +2,7 @@ from .util import doesMatchPattern, check_key_in_dict
 from .ReadData import REIXS
 from .edges import EdgeDict
 from .xeol import *
-from .offset import apply_offset
+from .simplemath import apply_offset
 import warnings
 import numpy as np
 from .parser import math_stream
