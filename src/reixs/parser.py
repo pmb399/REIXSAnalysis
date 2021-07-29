@@ -1,6 +1,10 @@
+import math
 import re
 import parser
 from .util import doesMatchPattern
+from numpy import log as ln
+from numpy import log10 as log
+from numpy import exp
 
 
 def math_stream(formula, data, arg, get_data, XAS_streams=None, is_XAS=False, background=None, REIXSObj=None):
@@ -19,9 +23,16 @@ def math_stream(formula, data, arg, get_data, XAS_streams=None, is_XAS=False, ba
             try:
                 float(string)
             except:
-                # Assign generic "val{i}" key to string literal in compliance with
-                # python supported syntax for variables
-                quantity_str_dict[f"val{i}"] = string
+                # Use math expressions to allow logs and exps
+                math_expressions = ['ln', 'log', 'exp']
+
+                if string in math_expressions:
+                    pass
+
+                else:
+                    # Assign generic "val{i}" key to string literal in compliance with
+                    # python supported syntax for variables
+                    quantity_str_dict[f"val{i}"] = string
 
     # Parser does not support special string literals (ROIs) due to inproper python variable naming syntax
     # Replace them with generic key as per dictionary
