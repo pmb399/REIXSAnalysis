@@ -30,7 +30,7 @@ Before you start, you will need to import the required reixs package, enable bok
 ## Define base directory
 basedir = "/home/braun/ownCloud/Beamtime/example_data/"
 
-## Setup necesarry inputs
+## Setup necessarry inputs
 from reixs.LoadData import *
 from bokeh.io import show, output_notebook
 output_notebook(hide_banner=True)
