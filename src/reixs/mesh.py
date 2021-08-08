@@ -10,7 +10,7 @@ from .parser import math_stream
 
 def loadMeshScans(basedir, file, x_stream, y_stream, z_stream, *args, norm=True, is_XAS=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None):
     special_streams = ['TEY', 'TFY', 'PFY', 'iPFY', 'XES', 'rXES', 'specPFY',
-                       'XRF', 'rXRF', 'XEOL', 'rXEOL', 'POY', 'TOY']  # all special inputs
+                       'XRF', 'rXRF', 'XEOL', 'rXEOL', 'POY', 'TOY', 'EY']  # all special inputs
     XAS_streams = ['TEY', 'TFY', 'PFY', 'iPFY', 'specPFY', 'POY',
                    'TOY', 'rXES', 'rXRF', 'rXEOL']  # All that are normalized to mesh
 
@@ -98,6 +98,9 @@ def loadMeshScans(basedir, file, x_stream, y_stream, z_stream, *args, norm=True,
                 roi_high = int(roi.split(":")[1])
 
                 return poy_spec(data, arg, REIXSobj, roi_low, roi_high, background_scan=background)
+
+            elif y_stream == 'EY':
+                return data[arg].sample_current
 
             else:
                 raise UserWarning("Special Stream not defined.")

@@ -294,7 +294,7 @@ class Load2d:
 
                 if self.y_stream[i] == 'SDD Energy':
                     p.y_range.start = 0
-                    p.y_range.end = 1200
+                    p.y_range.end = 2000
 
                 p.title.text = f'{self.detector[i]} Image for Scan {k}'
                 p.toolbar.logo = None
