@@ -123,7 +123,7 @@ class Load1d:
         with open(f"{filename}.csv", 'w') as f:
             for idx, file in enumerate(files):
                 f.write(f"# F{idx+1} {file}\n")
-            dfT.to_csv(f, index=False, line_terminator=os.linesep)
+            dfT.to_csv(f, index=False, line_terminator='\n')
 
         # dfT.to_csv(f"{filename}.csv",index=False)
         print(f"Successfully wrote DataFrame to {filename}.csv")
@@ -604,7 +604,7 @@ class ImageROILoader():
         with open(f"{filename}.csv", 'w') as f:
             for idx, file in enumerate(files):
                 f.write(f"# F{idx+1} {file}\n")
-            dfT.to_csv(f, index=False, line_terminator=os.linesep)
+            dfT.to_csv(f, index=False, line_terminator='\n')
 
         # dfT.to_csv(f"{filename}.csv",index=False)
         print(f"Successfully wrote DataFrame to {filename}.csv")
