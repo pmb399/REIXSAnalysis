@@ -116,7 +116,7 @@ class Load1d:
                 df = df.append(s1)
                 s2 = pd.Series(
                     v.y_stream, name=f"F{fileindex+1}_S{v.scan}_I{i+1}-{self.type[i]}")
-                df = df.append(s2,)
+                df = df.append(s2)
 
         dfT = df.transpose(copy=True)
 
@@ -597,7 +597,7 @@ class ImageROILoader():
                     df = df.append(s1)
                     s2 = pd.Series(
                         v.imagesca[image], name=f"F{fileindex+1}_S{v.scan}_I{i+1}_Img{image}_Counts")
-                    df = df.append(s2,)
+                    df = df.append(s2)
 
         dfT = df.transpose(copy=True)
 
