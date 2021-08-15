@@ -121,8 +121,11 @@ class Load1d:
         dfT = df.transpose(copy=True)
 
         with open(f"{filename}.csv", 'w') as f:
+            string = '# '
             for idx, file in enumerate(files):
-                f.write(f"# F{idx+1} {file},")
+                string += f"F{idx+1} {file},"
+            string += '\n'
+            f.write(string)
             dfT.to_csv(f, index=False, line_terminator='\n')
 
         # dfT.to_csv(f"{filename}.csv",index=False)
@@ -602,8 +605,11 @@ class ImageROILoader():
         dfT = df.transpose(copy=True)
 
         with open(f"{filename}.csv", 'w') as f:
+            string = '# '
             for idx, file in enumerate(files):
-                f.write(f"# F{idx+1} {file},")
+                string += f"F{idx+1} {file},"
+            string += '\n'
+            f.write(string)
             dfT.to_csv(f, index=False, line_terminator='\n')
 
         # dfT.to_csv(f"{filename}.csv",index=False)
