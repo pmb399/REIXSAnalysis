@@ -9,3 +9,6 @@
 #Also don't want pycache or jupyter checkpoints
 **/__pycache__/
 **/.ipynb_checkpoints
+
+# Do not upload dist directory
+**/dist
