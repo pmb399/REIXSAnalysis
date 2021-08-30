@@ -4,7 +4,7 @@ from .sca import loadSCAscans
 from .simplemath import apply_offset
 
 
-def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False, is_XAS=False, background=None, offset=None, coffset=None, deriv=None):
+def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None):
     class added_object:
         def __init__(self):
             pass
@@ -49,12 +49,13 @@ def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False,
         data[0].y_stream = np.interp(
             data[0].y_stream, (data[0].y_stream.min(), data[0].y_stream.max()), (0, 1))
 
-    data[0].x_stream = apply_offset(data[0].x_stream, offset, coffset)
+    data[0].x_stream = apply_offset(data[0].x_stream, xoffset, xcoffset)
+    data[0].y_stream = apply_offset(data[0].y_stream, yoffset, ycoffset)
 
     return data
 
 
-def ScanSubtraction(basedir, file, x_stream, y_stream, *args, avg=True, norm=False, is_XAS=False, background=None, offset=None, coffset=None, deriv=None):
+def ScanSubtraction(basedir, file, x_stream, y_stream, *args, avg=True, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None):
     class added_object:
         def __init__(self):
             pass
@@ -99,6 +100,7 @@ def ScanSubtraction(basedir, file, x_stream, y_stream, *args, avg=True, norm=Fal
         data[0].y_stream = np.interp(
             data[0].y_stream, (data[0].y_stream.min(), data[0].y_stream.max()), (0, 1))
 
-    data[0].x_stream = apply_offset(data[0].x_stream, offset, coffset)
+    data[0].x_stream = apply_offset(data[0].x_stream, xoffset, xcoffset)
+    data[0].y_stream = apply_offset(data[0].y_stream, yoffset, ycoffset)
 
     return data

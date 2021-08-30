@@ -38,23 +38,23 @@ class Load1d:
         self.x_stream = list()
         self.filename = list()
 
-    def load(self, basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, offset=None, coffset=None, background=None, deriv=None):
+    def load(self, basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, deriv=None):
         self.data.append(loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=norm,
-                         is_XAS=is_XAS, offset=offset, coffset=coffset, background=background, deriv=deriv))
+                         is_XAS=is_XAS, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background, deriv=deriv))
         self.type.append(y_stream)
         self.x_stream.append(x_stream)
         self.filename.append(file)
 
-    def add(self, basedir, file, x_stream, y_stream, *args, avg=False, norm=False, is_XAS=False, background=None, offset=None, coffset=None, deriv=None):
+    def add(self, basedir, file, x_stream, y_stream, *args, avg=False, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None):
         self.data.append(ScanAddition(basedir, file, x_stream, y_stream, *args, avg=avg,
-                         norm=norm, is_XAS=is_XAS, background=background, offset=offset, coffset=coffset, deriv=deriv))
+                         norm=norm, is_XAS=is_XAS, background=background, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv))
         self.x_stream.append(x_stream)
         self.type.append(y_stream)
         self.filename.append(file)
 
-    def subtract(self, basedir, file, x_stream, y_stream, *args, avg=False, norm=False, is_XAS=False, background=None, offset=None, coffset=None, deriv=None):
+    def subtract(self, basedir, file, x_stream, y_stream, *args, avg=False, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None):
         self.data.append(ScanSubtraction(basedir, file, x_stream, y_stream, *args, avg=avg,
-                         norm=norm, is_XAS=is_XAS, background=background, offset=offset, coffset=coffset, deriv=deriv))
+                         norm=norm, is_XAS=is_XAS, background=background, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv))
         self.x_stream.append(x_stream)
         self.type.append(y_stream)
         self.filename.append(file)
@@ -156,32 +156,32 @@ class Load1d:
 
 
 class XASLoader(Load1d):
-    def load(self, basedir, file, y_stream, *args, norm=True, offset=None, coffset=None, background=None, deriv=None):
+    def load(self, basedir, file, y_stream, *args, norm=True, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, deriv=None):
         x_stream = 'Mono Energy'
         super().load(basedir, file, x_stream, y_stream, *args, norm=norm,
-                     is_XAS=True, offset=offset, coffset=coffset, background=background, deriv=deriv)
+                     is_XAS=True, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background, deriv=deriv)
 
     def plot(self, linewidth=4):
         title = 'Absorption spectra normalized by mesh current'
         xlabel = "Incident Photon Energy (eV)"
         super().plot(linewidth=linewidth, title=title, xlabel=xlabel)
 
-    def add(self, basedir, file, y_stream, *args, avg=True, norm=True, background=None, offset=None, coffset=None, deriv=None):
+    def add(self, basedir, file, y_stream, *args, avg=True, norm=True, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None):
         x_stream = "Mono Energy"
         super().add(basedir, file, x_stream, y_stream, *args, avg=avg, norm=norm,
-                    is_XAS=True, background=background, offset=offset, coffset=coffset, deriv=deriv)
+                    is_XAS=True, background=background, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv)
 
-    def subtract(self, basedir, file, y_stream, *args, avg=True, norm=True, background=None, offset=None, coffset=None, deriv=None):
+    def subtract(self, basedir, file, y_stream, *args, avg=True, norm=True, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None):
         x_stream = "Mono Energy"
         super().subtract(basedir, file, x_stream, y_stream, *args, avg=avg,
-                         norm=norm, is_XAS=True, background=background, offset=offset, coffset=coffset, deriv=deriv)
+                         norm=norm, is_XAS=True, background=background, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv)
 
 
 class XESLoader(Load1d):
-    def load(self, basedir, file, y_stream, *args, norm=False, offset=None, coffset=None, deriv=None):
+    def load(self, basedir, file, y_stream, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None):
         x_stream = "MCP Energy"
         super().load(basedir, file, x_stream, y_stream, *
-                     args, norm=norm, offset=offset, coffset=coffset, deriv=deriv)
+                     args, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv)
 
     def plot(self, linewidth=4):
         title = 'Summed MCP emission spectra'
@@ -189,22 +189,22 @@ class XESLoader(Load1d):
         ylabel = "Counts (arb. units)"
         super().plot(linewidth=linewidth, title=title, xlabel=xlabel, ylabel=ylabel)
 
-    def add(self, basedir, file, y_stream, *args, avg=False, norm=False, offset=None, coffset=None, deriv=None):
+    def add(self, basedir, file, y_stream, *args, avg=False, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None):
         x_stream = "MCP Energy"
         super().add(basedir, file, x_stream, y_stream, *args,
-                    avg=avg, norm=norm, offset=offset, coffset=coffset, deriv=deriv)
+                    avg=avg, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv)
 
-    def subtract(self, basedir, file, y_stream, *args, avg=False, norm=False, offset=None, coffset=None, deriv=None):
+    def subtract(self, basedir, file, y_stream, *args, avg=False, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None):
         x_stream = "MCP Energy"
         super().subtract(basedir, file, x_stream, y_stream, *
-                         args, avg=avg, norm=norm, offset=offset, coffset=coffset, deriv=deriv)
+                         args, avg=avg, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv)
 
 
 class XRFLoader(Load1d):
-    def load(self, basedir, file, y_stream, *args, norm=False, offset=None, coffset=None, deriv=None):
+    def load(self, basedir, file, y_stream, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None):
         x_stream = "SDD Energy"
         super().load(basedir, file, x_stream, y_stream, *
-                     args, norm=norm, offset=offset, coffset=coffset, deriv=deriv)
+                     args, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv)
 
     def plot(self, linewidth=4):
         title = 'Summed SDD emission spectra'
@@ -212,22 +212,22 @@ class XRFLoader(Load1d):
         ylabel = "Counts (arb. units)"
         super().plot(linewidth=linewidth, title=title, xlabel=xlabel, ylabel=ylabel)
 
-    def add(self, basedir, file, y_stream, *args, avg=False, norm=False, offset=None, coffset=None, deriv=None):
+    def add(self, basedir, file, y_stream, *args, avg=False, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None):
         x_stream = "SDD Energy"
         super().add(basedir, file, x_stream, y_stream, *args,
-                    avg=avg, norm=norm, offset=offset, coffset=coffset, deriv=deriv)
+                    avg=avg, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv)
 
-    def subtract(self, basedir, file, y_stream, *args, avg=False, norm=False, offset=None, coffset=None, deriv=None):
+    def subtract(self, basedir, file, y_stream, *args, avg=False, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None):
         x_stream = "SDD Energy"
         super().subtract(basedir, file, x_stream, y_stream, *
-                         args, avg=avg, norm=norm, offset=offset, coffset=coffset, deriv=deriv)
+                         args, avg=avg, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv)
 
 
 class XEOLLoader(Load1d):
-    def load(self, basedir, file, y_stream, *args, norm=False, offset=None, coffset=None, background=None, deriv=None):
+    def load(self, basedir, file, y_stream, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, deriv=None):
         x_stream = "XEOL Energy"
         super().load(basedir, file, x_stream, y_stream, *args, norm=norm,
-                     offset=offset, coffset=coffset, background=background, deriv=deriv)
+                     xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background, deriv=deriv)
 
     def plot(self, linewidth=4):
         title = 'Summed XEOL spectra'
@@ -235,15 +235,15 @@ class XEOLLoader(Load1d):
         ylabel = "Counts (arb. units)"
         super().plot(linewidth=linewidth, title=title, xlabel=xlabel, ylabel=ylabel)
 
-    def add(self, basedir, file, y_stream, *args, avg=False, norm=False, background=None, offset=None, coffset=None, deriv=None):
+    def add(self, basedir, file, y_stream, *args, avg=False, norm=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None):
         x_stream = "XEOL Energy"
         super().add(basedir, file, x_stream, y_stream, *args, avg=avg,
-                    norm=norm, background=background, offset=offset, coffset=coffset, deriv=deriv)
+                    norm=norm, background=background, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv)
 
-    def subtract(self, basedir, file, y_stream, *args, avg=False, norm=False, background=None, offset=None, coffset=None, deriv=None):
+    def subtract(self, basedir, file, y_stream, *args, avg=False, norm=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None):
         x_stream = "XEOL Energy"
         super().subtract(basedir, file, x_stream, y_stream, *args, avg=avg,
-                         norm=norm, background=background, offset=offset, coffset=coffset, deriv=deriv)
+                         norm=norm, background=background, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv)
 
 
 #########################################################################################

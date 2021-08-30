@@ -8,7 +8,7 @@ import numpy as np
 from .parser import math_stream
 
 
-def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, offset=None, coffset=None, background=None, deriv=None):
+def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, deriv=None):
     special_streams = ['TEY', 'TFY', 'PFY', 'iPFY', 'XES', 'rXES', 'specPFY',
                        'XRF', 'rXRF', 'XEOL', 'rXEOL', 'POY', 'TOY', 'EY']  # all special inputs
     XAS_streams = ['TEY', 'TFY', 'PFY', 'iPFY', 'specPFY', 'POY',
@@ -138,11 +138,15 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
 
         # Assign the calculated result to the x_stream of the object in data dict
         data[arg].x_stream = math_stream(x_stream, data, arg, get_x_data)
-        data[arg].x_stream = apply_offset(data[arg].x_stream, offset, coffset)
+        data[arg].x_stream = apply_offset(
+            data[arg].x_stream, xoffset, xcoffset)
 
         if norm == True:
             data[arg].y_stream = np.interp(
                 data[arg].y_stream, (data[arg].y_stream.min(), data[arg].y_stream.max()), (0, 1))
+
+        data[arg].y_stream = apply_offset(
+            data[arg].y_stream, yoffset, ycoffset)
 
         if deriv != None:
             data[arg].y_stream = take_derivative1d(
