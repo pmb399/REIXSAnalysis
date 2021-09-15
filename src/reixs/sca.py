@@ -8,7 +8,7 @@ import numpy as np
 from .parser import math_stream
 
 
-def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, deriv=None):
+def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, deriv=None,energyloss=None):
     special_streams = ['TEY', 'TFY', 'PFY', 'iPFY', 'XES', 'rXES', 'specPFY',
                        'XRF', 'rXRF', 'XEOL', 'rXEOL', 'POY', 'TOY', 'EY']  # all special inputs
     XAS_streams = ['TEY', 'TFY', 'PFY', 'iPFY', 'specPFY', 'POY',
@@ -154,5 +154,8 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
             if norm == True:
                 data[arg].y_stream = data[arg].y_stream / \
                     data[arg].y_stream.max()
+
+        if energyloss!=None:
+            data[arg].x_stream = energyloss-data[arg].x_stream
 
     return data

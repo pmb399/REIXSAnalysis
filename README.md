@@ -100,6 +100,7 @@ sca.exporter('name')
 - _yoffset_ (Takes a list of tuples and defines a polynomial fit of the y-stream)
   e.g. offset = [(100,102),(110,112),(120,121)]
 - _background_ (Subtracts a XEOL background from XEOL scans)
+- _energyloss_ (Requires the incident photon energy and moves the resultant MCP scale to energy loss)
 
 #### Absorption Scans
 
