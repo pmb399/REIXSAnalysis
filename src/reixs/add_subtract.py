@@ -15,7 +15,7 @@ def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False,
 
     # Get the appropriate data first
     Scandata = loadSCAscans(basedir, file, x_stream, y_stream, *args,
-                            norm=False, is_XAS=is_XAS, background=background, deriv=deriv,energyloss=energyloss)
+                            norm=False, is_XAS=is_XAS, background=background, deriv=deriv,energyloss=None)
 
     for i, (k, v) in enumerate(Scandata.items()):
         if i == 0:
@@ -52,6 +52,9 @@ def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False,
     data[0].x_stream = apply_offset(data[0].x_stream, xoffset, xcoffset)
     data[0].y_stream = apply_offset(data[0].y_stream, yoffset, ycoffset)
 
+    if energyloss!=None:
+        data[0].x_stream = energyloss-data[0].x_stream
+
     return data
 
 
@@ -66,7 +69,7 @@ def ScanSubtraction(basedir, file, x_stream, y_stream, *args, avg=True, norm=Fal
 
     # Get the appropriate data first
     Scandata = loadSCAscans(basedir, file, x_stream, y_stream, *args,
-                            norm=False, is_XAS=is_XAS, background=background, deriv=deriv,energyloss=energyloss)
+                            norm=False, is_XAS=is_XAS, background=background, deriv=deriv,energyloss=None)
 
     for i, (k, v) in enumerate(Scandata.items()):
         if i == 0:
@@ -102,5 +105,8 @@ def ScanSubtraction(basedir, file, x_stream, y_stream, *args, avg=True, norm=Fal
 
     data[0].x_stream = apply_offset(data[0].x_stream, xoffset, xcoffset)
     data[0].y_stream = apply_offset(data[0].y_stream, yoffset, ycoffset)
+
+    if energyloss!=None:
+        data[0].x_stream = energyloss-data[0].x_stream
 
     return data
