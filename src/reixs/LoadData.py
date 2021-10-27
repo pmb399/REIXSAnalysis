@@ -328,6 +328,7 @@ class Load2d:
         return xmin, xmax, ymin, ymax, new_x, new_y, new_z
 
     def export(self, filename):
+        df = pd.DataFrame()
         with open(f"{filename}.txt_scale", "w") as f:
             with open(f"{filename}.txt_matrix", "w") as g:
                 for i, val in enumerate(self.data):
@@ -344,10 +345,15 @@ class Load2d:
                             f"F~{self.filename[i]}_S{v.scan}_{self.detector[i]}_{self.x_stream[i]}_{self.y_stream[i]}\n")
                         g.write("========================\n")
 
-                        f.write("=== Motor Scale Gridded ===\n")
-                        np.savetxt(f, new_x)
-                        f.write("=== Detector Scale Gridded ===\n")
-                        np.savetxt(f, new_y)
+                        s1 = pd.Series(
+                        new_x, name="Motor Scale Gridded")
+                        df = df.append(s1)
+                        s2 = pd.Series(
+                        new_y, name="Detector Scale Gridded")
+                        df = df.append(s2)
+                        dfT = df.transpose(copy=True)
+                        dfT.to_csv(f, index=False, line_terminator='\n')
+
                         g.write("=== Image ===\n")
                         np.savetxt(g, new_z, fmt="%.9g")
 
