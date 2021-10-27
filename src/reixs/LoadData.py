@@ -260,6 +260,10 @@ class Load2d:
         self.norm = list()
 
     def load(self, basedir, file, x_stream, y_stream, detector, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None):
+        if len(args) != 1:
+            raise TypeError("You may only select one scan at a time")
+        if self.data != []:
+            raise TypeError("You can only append one scan per object")
         self.data.append(loadMCAscans(basedir, file, x_stream, y_stream, detector, *args, norm=norm,
                          xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background))
         self.x_stream.append(x_stream)
@@ -324,8 +328,8 @@ class Load2d:
         return xmin, xmax, ymin, ymax, new_x, new_y, new_z
 
     def export(self, filename):
-        with open(f"{filename}.txt_scale", "a") as f:
-            with open(f"{filename}.txt_matrix", "a") as g:
+        with open(f"{filename}.txt_scale", "w") as f:
+            with open(f"{filename}.txt_matrix", "w") as g:
                 for i, val in enumerate(self.data):
                     for k, v in val.items():
                         xmin, xmax, ymin, ymax, new_x, new_y, new_z = self.grid_data(
