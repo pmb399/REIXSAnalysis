@@ -1,5 +1,9 @@
 import re
 from itertools import groupby
+import pandas as pd
+import numpy as np
+from scipy.interpolate import interp1d
+
 
 #########################################################################################
 def all_list_entries_equal(iterable):
@@ -36,3 +40,28 @@ COLORP = ['#d60000', '#8c3bff', '#018700', '#00acc6', '#e6a500', '#ff7ed1', '#6b
  '#727790', '#6e0099', '#a0ba52', '#e16e31', '#c46970', '#6d5b95', '#a33b74', '#316200', '#87004f', '#335769', '#ba8c7c', '#1859ff', '#909101', '#2b8ad4', '#1626ff', '#21d3ff', '#a390af', '#8a6d4f', '#5d213d', '#db03b3', '#6e56ca', '#642821', '#ac7700', '#a3bff6', '#b58346', '#9738db', '#b15093', '#7242a3', '#878ed1', '#8970b1', '#6baf36', '#5979c8',
  '#c69eff', '#56831a', '#00d6a7', '#824638', '#11421c', '#59aa75', '#905b01', '#f64470', '#ff9703', '#e14231', '#ba91cf', '#34574d', '#f7807c', '#903400', '#b3cd00', '#2d9ed3', '#798a9e', '#50807c', '#c136d6', '#eb0552', '#b8ac7e', '#487031', '#839564', '#d89c89', '#0064a3', '#4b9077', '#8e6097', '#ff5238', '#a7423b', '#006e70', '#97833d', '#dbafc8']
 #########################################################################################
+
+def to_quanty(file):
+    df = pd.read_csv(file,header=1)
+    minimum = list()
+    maximum = list()
+    diff = list()
+    interpObj = list()
+    for i,name in enumerate(df.columns):
+        if name.endswith('MCP Energy'):
+            minimum.append(df[name].min())
+            maximum.append(df[name].max())
+            diff.append(np.diff(df[name]).min())
+            
+            interpObj.append(interp1d(np.array(df[name]),np.array(df.iloc[:,df.columns.get_loc(name)+1]),fill_value='extrapolate'))
+
+    numPoints = int(np.ceil((np.array(maximum).max() - np.array(minimum).min())/abs(np.array(diff).min())))
+    linspace = np.linspace(np.array(minimum).min(),np.array(maximum).max(),numPoints,endpoint=True)
+
+    dfint = pd.DataFrame(linspace)
+
+    for i,obj in enumerate(interpObj):
+        dfint[i+1] = obj(linspace)
+
+    npreturn = dfint.to_numpy()
+    np.savetxt(f"{file}_Quanty.txt",npreturn)
