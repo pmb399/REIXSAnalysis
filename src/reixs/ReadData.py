@@ -379,7 +379,14 @@ class REIXS(object):
 
         def XES(my):
             """Sum the MCP detector image over all recorded datapoints."""
-            return np.sum(my.mcp_data,axis=1)
+            try:
+                sum = np.sum(my.mcp_data,axis=1)
+
+            except:
+                warnings.warn("Only one data point in MCP file to sum.")
+                sum = my.mcp_data
+
+            return sum
         
         def rXES(my,xes_incident_start,xes_incident_end):
             """Calculate resonant emission at selected energy (MCP)."""
