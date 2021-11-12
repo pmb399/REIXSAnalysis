@@ -54,7 +54,7 @@ sca.load(basedir,'FileName.dat','x_stream','y_stream',1,2,3,4,norm=True)
 sca.addScans(basedir,'FileName.dat','x_stream','y_stream',1,2,3,4,norm=False,avg=False)
 sca.subtractScans(basedir,'FileName.dat','x_stream','y_stream',1,2,3,4,norm=False,avg=False)
 sca.plot()
-sca.exporter('name')
+sca.exporter()
 ```
 
 1. Specify the variable for the base directory (basedir)
@@ -114,22 +114,73 @@ xas.plot()
 xas.exporter()
 ```
 
-#### Emission Scans
+#### Emission Scans (MCP)
 
 ```
 xes = XESLoader()
+# Options: XES, rXES
+xes.load(basedir,'Plate2a.dat','XES',3,xoffset=[(510,520)])
+xes.load(basedir,'Plate2a.dat','XES',3)
+xes.load(basedir,'Plate2a.dat','rXES[520:560]',4)
+xes.add(basedir,'Plate2a.dat','XES',1,4,)
+xes.subtract(basedir,'Plate2a.dat','XES',1,4)
+xes.plot()
+xes.exporter()
+```
+
+#### XRF Scans (SDD)
+
+```
+xrf = XRFLoader()
+# Options XRF,rXRF
+xrf.load(basedir,'Plate2a.dat','XRF',3,xoffset=[(510,520)])
+xrf.load(basedir,'Plate2a.dat','XRF',3)
+xrf.load(basedir,'Plate2a.dat','rXRF[520:560]',4)
+xrf.add(basedir,'Plate2a.dat','XRF',1,4,)
+xrf.subtract(basedir,'Plate2a.dat','XRF',1,4)
+xrf.plot()
+xrf.exporter()
 ```
 
 #### XEOL Scans
 
 ```
 xeol = XEOLLoader()
+#Options: XEOL, rXEOL
+xeol.load(basedir,'RIXS_ES_QA.dat','XEOL',1,2,3,4,background=3)
+xeol.plot()
 ```
 
 ### 2d Images
 
-To be documented.
+Note: Can only load one scan at a time!
+
+```
+load2d = Load2d()
+load2d.load(basedir,'Plate2a.dat','Mono Energy','SDD Energy','SDD',1)
+load2d.plot()
+load2d.exporter()
+```
+
+### EEMs (normalized by mesh current)
+
+Note: Can only load one scan at a time!
+
+```
+eems = EEMsLoader()
+eems.load(basedir,'Plate2a.dat','SDD',1)
+eems.load(basedir,'Plate2a.dat','MCP',1)
+eems.load(basedir,'RIXS_ES_QA.dat','XEOL',2,background=3)
+eems.plot()
+eems.exporter()
+```
 
 ### Mesh Scans
 
-To be documented.
+```
+mesh = LoadMesh()
+mesh.load(basedir,'mesh_scan.txt','Y','Z','TEY',24,norm=True)
+mesh.plot()
+mesh.exporter()
+```
+
