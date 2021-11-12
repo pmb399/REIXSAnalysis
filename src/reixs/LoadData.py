@@ -258,8 +258,10 @@ class Load2d:
         self.detector = list()
         self.filename = list()
         self.norm = list()
+        self.grid_x = list()
+        self.grid_y = list()
 
-    def load(self, basedir, file, x_stream, y_stream, detector, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None):
+    def load(self, basedir, file, x_stream, y_stream, detector, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None,grid_x=[None, None, None],grid_y = [None, None, None]):
         if len(args) != 1:
             raise TypeError("You may only select one scan at a time")
         if self.data != []:
@@ -271,6 +273,8 @@ class Load2d:
         self.detector.append(detector)
         self.norm.append(norm)
         self.filename.append(file)
+        self.grid_x.append(grid_x)
+        self.grid_y.append(grid_y)
 
     def plot(self):
 
@@ -281,7 +285,7 @@ class Load2d:
                            tools="pan,wheel_zoom,box_zoom,reset,hover,crosshair,save")
                 p.x_range.range_padding = p.y_range.range_padding = 0
 
-                xmin, xmax, ymin, ymax, new_x, new_y, new_z = self.grid_data(v)
+                xmin, xmax, ymin, ymax, new_x, new_y, new_z = self.grid_data(v,i)
 
                 # must give a vector of image data for image parameter
                 color_mapper = LinearColorMapper(palette="Viridis256",
@@ -310,19 +314,33 @@ class Load2d:
 
                 show(p)
 
-    def grid_data(self, v):
-        xmin = v.x_data.min()
-        xmax = v.x_data.max()
-        ymin = v.y_data.min()
-        ymax = v.y_data.max()
+    def grid_data(self, v,i):
 
-        x_points = int(np.ceil((xmax-xmin)/np.diff(v.x_data).min()))
-        y_points = int(np.ceil((ymax-ymin)/np.diff(v.y_data).min()))
+        # Do auto-grid if not specified otherwise
+        if self.grid_x[i] == [None,None,None]:
+            xmin = v.x_data.min()
+            xmax = v.x_data.max()
+            x_points = int(np.ceil((xmax-xmin)/np.diff(v.x_data).min())) + 1
+
+        else:
+            xmin = self.grid_x[i][0]
+            xmax = self.grid_x[i][1]
+            x_points = int(np.ceil((xmax-xmin)/self.grid_x[i][2])) + 1
+
+        if self.grid_y[i] == [None,None,None]:
+            ymin = v.y_data.min()
+            ymax = v.y_data.max()
+            y_points = int(np.ceil((ymax-ymin)/np.diff(v.y_data).min())) + 1 
+
+        else:
+            ymin = self.grid_y[i][0]
+            ymax = self.grid_y[i][1]
+            y_points = int(np.ceil((ymax-ymin)/self.grid_y[i][2])) + 1
 
         f = interp2d(v.x_data, v.y_data, v.detector)
 
-        new_x = np.linspace(xmin, xmax, x_points)
-        new_y = np.linspace(ymin, ymax, y_points)
+        new_x = np.linspace(xmin, xmax, x_points,endpoint=True)
+        new_y = np.linspace(ymin, ymax, y_points,endpoint=True)
         new_z = f(new_x, new_y)
 
         return xmin, xmax, ymin, ymax, new_x, new_y, new_z
@@ -334,7 +352,7 @@ class Load2d:
                 for i, val in enumerate(self.data):
                     for k, v in val.items():
                         xmin, xmax, ymin, ymax, new_x, new_y, new_z = self.grid_data(
-                            v)
+                            v,i)
                         f.write("========================\n")
                         f.write(
                             f"F~{self.filename[i]}_S{v.scan}_{self.detector[i]}_{self.x_stream[i]}_{self.y_stream[i]}\n")
@@ -384,7 +402,7 @@ class Load2d:
 
 
 class EEMsLoader(Load2d):
-    def load(self, basedir, file, detector, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None):
+    def load(self, basedir, file, detector, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None,grid_x=[None, None, None],grid_y = [None, None, None]):
         x_stream = 'Mono Energy'
 
         if detector == "MCP":
@@ -397,7 +415,7 @@ class EEMsLoader(Load2d):
             raise TypeError("Detector not defined.")
 
         super().load(basedir, file, x_stream, y_stream, detector, *args, norm=norm, xoffset=xoffset,
-                     xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background)
+                     xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background,grid_x=grid_x,grid_y=grid_y)
 
 #########################################################################################
 
