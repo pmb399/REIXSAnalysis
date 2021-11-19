@@ -4,7 +4,7 @@ from .sca import loadSCAscans
 from .simplemath import apply_offset
 
 
-def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None,energyloss=None):
+def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None,energyloss=None,grid_x=[None,None,None]):
     class added_object:
         def __init__(self):
             pass
@@ -15,7 +15,7 @@ def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False,
 
     # Get the appropriate data first
     Scandata = loadSCAscans(basedir, file, x_stream, y_stream, *args,
-                            norm=False, is_XAS=is_XAS, background=background, deriv=deriv,energyloss=None)
+                            norm=False, is_XAS=is_XAS, background=background, deriv=deriv,energyloss=None,grid_x=grid_x)
 
     for i, (k, v) in enumerate(Scandata.items()):
         if i == 0:
@@ -58,7 +58,7 @@ def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False,
     return data
 
 
-def ScanSubtraction(basedir, file, x_stream, y_stream, *args, avg=True, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None,energyloss=None):
+def ScanSubtraction(basedir, file, x_stream, y_stream, *args, avg=True, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None,energyloss=None,grid_x=[None,None,None]):
     class added_object:
         def __init__(self):
             pass
@@ -69,7 +69,7 @@ def ScanSubtraction(basedir, file, x_stream, y_stream, *args, avg=True, norm=Fal
 
     # Get the appropriate data first
     Scandata = loadSCAscans(basedir, file, x_stream, y_stream, *args,
-                            norm=False, is_XAS=is_XAS, background=background, deriv=deriv,energyloss=None)
+                            norm=False, is_XAS=is_XAS, background=background, deriv=deriv,energyloss=None,grid_x=grid_x,)
 
     for i, (k, v) in enumerate(Scandata.items()):
         if i == 0:
