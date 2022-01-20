@@ -9,9 +9,9 @@ from .parser import math_stream
 from scipy.interpolate import interp1d
 
 
-def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, deriv=None,energyloss=None,grid_x=[None,None,None]):
+def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, deriv=None, energyloss=None, grid_x=[None, None, None]):
     special_streams = ['TEY', 'TFY', 'PFY', 'iPFY', 'XES', 'rXES', 'specPFY',
-                       'XRF', 'rXRF', 'XEOL', 'rXEOL', 'POY', 'TOY', 'EY']  # all special inputs
+                       'XRF', 'rXRF', 'XEOL', 'rXEOL', 'POY', 'TOY', 'EY', 'Sample', 'Mesh']  # all special inputs
     XAS_streams = ['TEY', 'TFY', 'PFY', 'iPFY', 'specPFY', 'POY',
                    'TOY', 'rXES', 'rXRF', 'rXEOL']  # All that are normalized to mesh
 
@@ -103,6 +103,18 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
             elif y_stream == 'EY':
                 return data[arg].sample_current
 
+            elif y_stream == 'tey':
+                # spec mnemonic for sample current
+                return data[arg].sample_current
+
+            elif y_stream == 'Sample':
+                # to ensure backwards compatibility
+                return data[arg].sample_current
+
+            elif y_stream == 'Mesh':
+                # to ensure backwards compatibility
+                return data[arg].mesh_current
+
             else:
                 raise UserWarning("Special Stream not defined.")
 
@@ -128,16 +140,16 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
         else:
             return np.array(data[arg].sca_data[x_stream])
 
-    def grid_data(x_stream,y_stream,grid):
+    def grid_data(x_stream, y_stream, grid):
         xmin = grid[0]
         xmax = grid[1]
 
         numPoints = int(np.ceil((xmax-xmin)/grid[2])) + 1
-        new_x = np.linspace(xmin,xmax,numPoints)
-        f = interp1d(x_stream,y_stream,fill_value='extrapolate')
+        new_x = np.linspace(xmin, xmax, numPoints)
+        f = interp1d(x_stream, y_stream, fill_value='extrapolate')
         new_y = f(new_x)
 
-        return new_x,new_y
+        return new_x, new_y
 
     data = dict()
     REIXSobj = REIXS(basedir, file)
@@ -152,8 +164,9 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
         data[arg].x_stream = math_stream(x_stream, data, arg, get_x_data)
 
         # Grid the data if specified
-        if grid_x!=[None,None,None]:
-            new_x,new_y = grid_data(data[arg].x_stream,data[arg].y_stream,grid_x)
+        if grid_x != [None, None, None]:
+            new_x, new_y = grid_data(
+                data[arg].x_stream, data[arg].y_stream, grid_x)
 
             data[arg].x_stream = new_x
             data[arg].y_stream = new_y
@@ -178,7 +191,7 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
                     data[arg].y_stream.max()
 
         # Transforms RIXS to energy loss scale if incident energy is given
-        if energyloss!=None:
+        if energyloss != None:
             data[arg].x_stream = energyloss-data[arg].x_stream
 
     return data

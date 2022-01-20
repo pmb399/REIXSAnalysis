@@ -47,7 +47,13 @@ def math_stream(formula, data, arg, get_data, XAS_streams=None, is_XAS=False, ba
         if is_XAS == False:
             locals()[k] = get_data(v, data, arg, background, REIXSObj)
         else:
-            if doesMatchPattern(v, XAS_streams):
+            if v == 'tey':
+                # spec nmemonic tey means sample current - not yet normalized to mesh current
+                numerator = get_data(v, data, arg, background, REIXSObj)
+                mesh = data[arg].mesh_current
+                locals()[k] = numerator/mesh
+
+            elif doesMatchPattern(v, XAS_streams):
                 locals()[k] = get_data(v, data, arg, background, REIXSObj)
             else:
                 numerator = get_data(v, data, arg, background, REIXSObj)
