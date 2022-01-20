@@ -12,3 +12,6 @@
 
 # Do not upload dist directory
 **/dist
+
+# Backup data
+*.backup
