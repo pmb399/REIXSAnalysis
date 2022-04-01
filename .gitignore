@@ -15,3 +15,6 @@
 
 # Backup data
 *.backup
+
+# Local jupyter notebook
+REIXSAnalysis-local.ipynb

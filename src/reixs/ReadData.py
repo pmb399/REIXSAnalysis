@@ -345,14 +345,11 @@ class REIXS_ASCII(object):
             self.XEOL = True
             #print("XEOL data found.")
 
-            if self.scanNumbers != self.xeol_scanNumbers:
-                print("Scan Number Mismatch in Files")
-
         except:
             self.XEOL = False
 
         if self.scanNumbers != self.sdd_scanNumbers:
-            print("Scan Number Mismatch in Files (Header)")
+            print("Scan Number Mismatch in Files (SDD)")
 
         if self.MCPRIXS == True and self.scanNumbers != self.mcp_scanNumbers:
             print("Scan Number Mismatch in Files (RIXS MCP)")
@@ -643,7 +640,7 @@ class REIXS_ASCII(object):
         def RSXS_MCPnorm(my):
             my.RSXSMCP_norm = dict()
             for k, v in my.mcpRSXS_scatters.items():
-                my.RSXSMCP_norm[k] = np.true_divide(v, my.sample_current[k])
+                my.RSXSMCP_norm[k] = np.true_divide(v, my.mesh_current[k])
 
             return my.RSXSMCP_norm
 
