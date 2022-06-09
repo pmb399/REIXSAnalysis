@@ -103,9 +103,9 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
             elif y_stream == 'EY':
                 return data[arg].sample_current
 
-            elif y_stream == 'tey':
-                # spec mnemonic for sample current
-                return data[arg].sample_current
+            #elif y_stream == 'tey':
+            #    # spec mnemonic for sample current
+            #    return data[arg].sample_current
 
             elif y_stream == 'Sample':
                 # to ensure backwards compatibility
@@ -116,10 +116,20 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
                 return data[arg].mesh_current
 
             else:
-                raise UserWarning("Special Stream not defined.")
+                try:
+                    return get_sca_data(y_stream, data, arg)
+
+                except:
+                    raise UserWarning("Special Stream not defined.")
 
         else:
-            return np.array(data[arg].sca_data[y_stream])
+            return get_sca_data(y_stream, data, arg)
+
+    def get_sca_data(stream, data, arg):
+        try:
+            return np.array(data[arg].sca_data[stream])
+        except:
+            return np.array(data[arg].sca_data[data[arg].mnemonic2name[stream]])
 
     def get_x_data(x_stream, data, arg, background, REIXSObj):
         if x_stream == "Mono Energy":
@@ -138,7 +148,7 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
             return np.array(range(0, len(data[arg].y_stream)), dtype=int)
 
         else:
-            return np.array(data[arg].sca_data[x_stream])
+            return get_sca_data(x_stream, data, arg)
 
     def grid_data(x_stream, y_stream, grid):
         xmin = grid[0]

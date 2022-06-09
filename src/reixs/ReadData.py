@@ -46,7 +46,8 @@ class REIXS_HDF5(object):
         # Create dictionary for scan numbers
         self.scanIndexDictHeader = dict()
         for k in self.f.keys():
-            self.scanIndexDictHeader[int(k.split("_")[1])] = k
+            if k.startswith("SCAN_"):
+                self.scanIndexDictHeader[int(k.split("_")[1])] = k
 
     def Scan(self, scan):
         return self.myScan(self, scan)
@@ -212,6 +213,8 @@ class REIXS_ASCII(object):
         self.scanNumbers = []
         self.scanType = []
         self.scanMotor = []
+        self.mnemonics = []
+        self.full_names = []
 
         try:
             full_path_for_header_file = os.path.join(baseName, header_file)
@@ -236,6 +239,16 @@ class REIXS_ASCII(object):
 
                 elif line.startswith("#L"):
                     self.datasets[-1].append(line.strip("#L ").strip("\n"))
+
+                elif line.startswith('#J'):
+                    plist = line.strip("\n").split()
+                    plist.pop(0)
+                    self.full_names += plist
+
+                elif line.startswith('#j'):
+                    plist = line.strip("\n").split()
+                    plist.pop(0)
+                    self.mnemonics += plist
 
                 elif line.startswith('#') or line.startswith('\n'):
                     pass
@@ -365,6 +378,11 @@ class REIXS_ASCII(object):
             print("Last Scan Number", self.scanNumbers[-1])
             print("Scans in File", len(self.scanNumbers))
 
+        if len(self.mnemonics) != len(self.full_names):
+            print("Mismatch with nmemonic to full name dictionary.")
+
+        self.mnemonic2name = dict(zip(self.mnemonics, self.full_names))
+
         # Create dictionary for scan numbers
         self.scanIndexDictHeader = dict()
         for i, scanIndex in enumerate(self.scanNumbers):
@@ -421,6 +439,12 @@ class REIXS_ASCII(object):
                 my.scanl = self.scanIndexDictHeader[scan]
             except:
                 raise ValueError("Scan not defined in header file.")
+
+            try:
+                my.mnemonic2name = self.mnemonic2name
+            except:
+                warnings.warn(
+                    "Problem with SCA mnemonic legacy support. Use full names inestead.")
 
             try:
                 my.scansdd = self.scanIndexDictSDD[scan]

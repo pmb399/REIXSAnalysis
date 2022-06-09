@@ -47,7 +47,10 @@ def loadMCAscans(basedir, file, x_stream, y_stream, detector, *args, norm=True, 
             return data[arg].mono_energy
 
         else:
-            return np.array(data[arg].sca_data[x_stream])
+            try:
+                return np.array(data[arg].sca_data[x_stream])
+            except:
+                return np.array(data[arg].sca_data[data[arg].mnemonic2name[x_stream]])
 
     data = dict()
     REIXSobj = REIXS(basedir, file)
