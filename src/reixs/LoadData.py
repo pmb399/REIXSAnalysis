@@ -38,23 +38,23 @@ class Load1d:
         self.x_stream = list()
         self.filename = list()
 
-    def load(self, basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, deriv=None,energyloss=None,grid_x=[None,None,None]):
+    def load(self, basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, deriv=None, energyloss=None, grid_x=[None, None, None]):
         self.data.append(loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=norm,
-                         is_XAS=is_XAS, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background, deriv=deriv,energyloss=energyloss,grid_x=grid_x))
+                         is_XAS=is_XAS, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background, deriv=deriv, energyloss=energyloss, grid_x=grid_x))
         self.type.append(y_stream)
         self.x_stream.append(x_stream)
         self.filename.append(file)
 
-    def add(self, basedir, file, x_stream, y_stream, *args, avg=False, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None,energyloss=None,grid_x=[None,None,None]):
+    def add(self, basedir, file, x_stream, y_stream, *args, avg=False, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None, energyloss=None, grid_x=[None, None, None]):
         self.data.append(ScanAddition(basedir, file, x_stream, y_stream, *args, avg=avg,
-                         norm=norm, is_XAS=is_XAS, background=background, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv,energyloss=energyloss,grid_x=grid_x))
+                         norm=norm, is_XAS=is_XAS, background=background, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv, energyloss=energyloss, grid_x=grid_x))
         self.x_stream.append(x_stream)
         self.type.append(y_stream)
         self.filename.append(file)
 
-    def subtract(self, basedir, file, x_stream, y_stream, *args, avg=False, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None,energyloss=None,grid_x=[None,None,None]):
+    def subtract(self, basedir, file, x_stream, y_stream, *args, avg=False, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None, energyloss=None, grid_x=[None, None, None]):
         self.data.append(ScanSubtraction(basedir, file, x_stream, y_stream, *args, avg=avg,
-                         norm=norm, is_XAS=is_XAS, background=background, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv,energyloss=energyloss,grid_x=grid_x))
+                         norm=norm, is_XAS=is_XAS, background=background, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv, energyloss=energyloss, grid_x=grid_x))
         self.x_stream.append(x_stream)
         self.type.append(y_stream)
         self.filename.append(file)
@@ -156,32 +156,32 @@ class Load1d:
 
 
 class XASLoader(Load1d):
-    def load(self, basedir, file, y_stream, *args, norm=True, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, deriv=None,grid_x=[None,None,None]):
+    def load(self, basedir, file, y_stream, *args, norm=True, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, deriv=None, grid_x=[None, None, None]):
         x_stream = 'Mono Energy'
         super().load(basedir, file, x_stream, y_stream, *args, norm=norm,
-                     is_XAS=True, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background, deriv=deriv,grid_x=grid_x)
+                     is_XAS=True, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background, deriv=deriv, grid_x=grid_x)
 
     def plot(self, linewidth=4):
         title = 'Absorption spectra normalized by mesh current'
         xlabel = "Incident Photon Energy (eV)"
         super().plot(linewidth=linewidth, title=title, xlabel=xlabel)
 
-    def add(self, basedir, file, y_stream, *args, avg=True, norm=True, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None,grid_x=[None,None,None]):
+    def add(self, basedir, file, y_stream, *args, avg=True, norm=True, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None, grid_x=[None, None, None]):
         x_stream = "Mono Energy"
         super().add(basedir, file, x_stream, y_stream, *args, avg=avg, norm=norm,
-                    is_XAS=True, background=background, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv,grid_x=grid_x)
+                    is_XAS=True, background=background, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv, grid_x=grid_x)
 
-    def subtract(self, basedir, file, y_stream, *args, avg=True, norm=True, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None,grid_x=[None,None,None]):
+    def subtract(self, basedir, file, y_stream, *args, avg=True, norm=True, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None, grid_x=[None, None, None]):
         x_stream = "Mono Energy"
         super().subtract(basedir, file, x_stream, y_stream, *args, avg=avg,
-                         norm=norm, is_XAS=True, background=background, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv,grid_x=grid_x)
+                         norm=norm, is_XAS=True, background=background, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv, grid_x=grid_x)
 
 
 class XESLoader(Load1d):
-    def load(self, basedir, file, y_stream, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None,energyloss=None,grid_x=[None,None,None]):
+    def load(self, basedir, file, y_stream, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None, energyloss=None, grid_x=[None, None, None]):
         x_stream = "MCP Energy"
         super().load(basedir, file, x_stream, y_stream, *
-                     args, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv,energyloss=energyloss,grid_x=grid_x)
+                     args, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv, energyloss=energyloss, grid_x=grid_x)
 
     def plot(self, linewidth=4):
         title = 'Summed MCP emission spectra'
@@ -189,22 +189,22 @@ class XESLoader(Load1d):
         ylabel = "Counts (arb. units)"
         super().plot(linewidth=linewidth, title=title, xlabel=xlabel, ylabel=ylabel)
 
-    def add(self, basedir, file, y_stream, *args, avg=False, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None,energyloss=None,grid_x=[None,None,None]):
+    def add(self, basedir, file, y_stream, *args, avg=False, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None, energyloss=None, grid_x=[None, None, None]):
         x_stream = "MCP Energy"
         super().add(basedir, file, x_stream, y_stream, *args,
-                    avg=avg, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv,energyloss=energyloss,grid_x=grid_x)
+                    avg=avg, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv, energyloss=energyloss, grid_x=grid_x)
 
-    def subtract(self, basedir, file, y_stream, *args, avg=False, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None,energyloss=None,grid_x=[None,None,None]):
+    def subtract(self, basedir, file, y_stream, *args, avg=False, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None, energyloss=None, grid_x=[None, None, None]):
         x_stream = "MCP Energy"
         super().subtract(basedir, file, x_stream, y_stream, *
-                         args, avg=avg, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv,energyloss=energyloss,grid_x=grid_x)
+                         args, avg=avg, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv, energyloss=energyloss, grid_x=grid_x)
 
 
 class XRFLoader(Load1d):
-    def load(self, basedir, file, y_stream, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None,energyloss=None,grid_x=[None,None,None]):
+    def load(self, basedir, file, y_stream, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None, energyloss=None, grid_x=[None, None, None]):
         x_stream = "SDD Energy"
         super().load(basedir, file, x_stream, y_stream, *
-                     args, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv,energyloss=energyloss,grid_x=grid_x)
+                     args, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv, energyloss=energyloss, grid_x=grid_x)
 
     def plot(self, linewidth=4):
         title = 'Summed SDD emission spectra'
@@ -212,22 +212,22 @@ class XRFLoader(Load1d):
         ylabel = "Counts (arb. units)"
         super().plot(linewidth=linewidth, title=title, xlabel=xlabel, ylabel=ylabel)
 
-    def add(self, basedir, file, y_stream, *args, avg=False, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None,energyloss=None,grid_x=[None,None,None]):
+    def add(self, basedir, file, y_stream, *args, avg=False, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None, energyloss=None, grid_x=[None, None, None]):
         x_stream = "SDD Energy"
         super().add(basedir, file, x_stream, y_stream, *args,
-                    avg=avg, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv,energyloss=energyloss,grid_x=grid_x)
+                    avg=avg, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv, energyloss=energyloss, grid_x=grid_x)
 
-    def subtract(self, basedir, file, y_stream, *args, avg=False, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None,energyloss=None,grid_x=[None,None,None]):
+    def subtract(self, basedir, file, y_stream, *args, avg=False, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None, energyloss=None, grid_x=[None, None, None]):
         x_stream = "SDD Energy"
         super().subtract(basedir, file, x_stream, y_stream, *
-                         args, avg=avg, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv,energyloss=energyloss,grid_x=grid_x)
+                         args, avg=avg, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv, energyloss=energyloss, grid_x=grid_x)
 
 
 class XEOLLoader(Load1d):
-    def load(self, basedir, file, y_stream, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, deriv=None,grid_x=[None,None,None]):
+    def load(self, basedir, file, y_stream, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, deriv=None, grid_x=[None, None, None]):
         x_stream = "XEOL Energy"
         super().load(basedir, file, x_stream, y_stream, *args, norm=norm,
-                     xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background, deriv=deriv,grid_x=grid_x)
+                     xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background, deriv=deriv, grid_x=grid_x)
 
     def plot(self, linewidth=4):
         title = 'Summed XEOL spectra'
@@ -235,15 +235,15 @@ class XEOLLoader(Load1d):
         ylabel = "Counts (arb. units)"
         super().plot(linewidth=linewidth, title=title, xlabel=xlabel, ylabel=ylabel)
 
-    def add(self, basedir, file, y_stream, *args, avg=False, norm=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None,grid_x=[None,None,None]):
+    def add(self, basedir, file, y_stream, *args, avg=False, norm=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None, grid_x=[None, None, None]):
         x_stream = "XEOL Energy"
         super().add(basedir, file, x_stream, y_stream, *args, avg=avg,
-                    norm=norm, background=background, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv,grid_x=grid_x)
+                    norm=norm, background=background, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv, grid_x=grid_x)
 
-    def subtract(self, basedir, file, y_stream, *args, avg=False, norm=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None,grid_x=[None,None,None]):
+    def subtract(self, basedir, file, y_stream, *args, avg=False, norm=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None, grid_x=[None, None, None]):
         x_stream = "XEOL Energy"
         super().subtract(basedir, file, x_stream, y_stream, *args, avg=avg,
-                         norm=norm, background=background, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv,grid_x=grid_x)
+                         norm=norm, background=background, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, deriv=deriv, grid_x=grid_x)
 
 
 #########################################################################################
@@ -261,7 +261,7 @@ class Load2d:
         self.grid_x = list()
         self.grid_y = list()
 
-    def load(self, basedir, file, x_stream, y_stream, detector, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None,grid_x=[None, None, None],grid_y = [None, None, None]):
+    def load(self, basedir, file, x_stream, y_stream, detector, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, grid_x=[None, None, None], grid_y=[None, None, None]):
         if len(args) != 1:
             raise TypeError("You may only select one scan at a time")
         if self.data != []:
@@ -285,7 +285,8 @@ class Load2d:
                            tools="pan,wheel_zoom,box_zoom,reset,hover,crosshair,save")
                 p.x_range.range_padding = p.y_range.range_padding = 0
 
-                xmin, xmax, ymin, ymax, new_x, new_y, new_z = self.grid_data(v,i)
+                xmin, xmax, ymin, ymax, new_x, new_y, new_z = self.grid_data(
+                    v, i)
 
                 # must give a vector of image data for image parameter
                 color_mapper = LinearColorMapper(palette="Viridis256",
@@ -314,23 +315,25 @@ class Load2d:
 
                 show(p)
 
-    def grid_data(self, v,i):
+    def grid_data(self, v, i):
 
         # Do auto-grid if not specified otherwise
-        if self.grid_x[i] == [None,None,None]:
+        if self.grid_x[i] == [None, None, None]:
             xmin = v.x_data.min()
             xmax = v.x_data.max()
-            x_points = int(np.ceil((xmax-xmin)/np.diff(v.x_data).min())) + 1
+            x_points = int(
+                np.ceil((xmax-xmin)/np.abs(np.diff(v.x_data)).min())) + 1
 
         else:
             xmin = self.grid_x[i][0]
             xmax = self.grid_x[i][1]
             x_points = int(np.ceil((xmax-xmin)/self.grid_x[i][2])) + 1
 
-        if self.grid_y[i] == [None,None,None]:
+        if self.grid_y[i] == [None, None, None]:
             ymin = v.y_data.min()
             ymax = v.y_data.max()
-            y_points = int(np.ceil((ymax-ymin)/np.diff(v.y_data).min())) + 1 
+            y_points = int(
+                np.ceil((ymax-ymin)/np.abs(np.diff(v.y_data)).min())) + 1
 
         else:
             ymin = self.grid_y[i][0]
@@ -339,8 +342,8 @@ class Load2d:
 
         f = interp2d(v.x_data, v.y_data, v.detector)
 
-        new_x = np.linspace(xmin, xmax, x_points,endpoint=True)
-        new_y = np.linspace(ymin, ymax, y_points,endpoint=True)
+        new_x = np.linspace(xmin, xmax, x_points, endpoint=True)
+        new_y = np.linspace(ymin, ymax, y_points, endpoint=True)
         new_z = f(new_x, new_y)
 
         return xmin, xmax, ymin, ymax, new_x, new_y, new_z
@@ -352,7 +355,7 @@ class Load2d:
                 for i, val in enumerate(self.data):
                     for k, v in val.items():
                         xmin, xmax, ymin, ymax, new_x, new_y, new_z = self.grid_data(
-                            v,i)
+                            v, i)
                         f.write("========================\n")
                         f.write(
                             f"F~{self.filename[i]}_S{v.scan}_{self.detector[i]}_{self.x_stream[i]}_{self.y_stream[i]}\n")
@@ -364,10 +367,10 @@ class Load2d:
                         g.write("========================\n")
 
                         s1 = pd.Series(
-                        new_x, name="Motor Scale Gridded")
+                            new_x, name="Motor Scale Gridded")
                         df = df.append(s1)
                         s2 = pd.Series(
-                        new_y, name="Detector Scale Gridded")
+                            new_y, name="Detector Scale Gridded")
                         df = df.append(s2)
                         dfT = df.transpose(copy=True)
                         dfT.to_csv(f, index=False, line_terminator='\n')
@@ -402,7 +405,7 @@ class Load2d:
 
 
 class EEMsLoader(Load2d):
-    def load(self, basedir, file, detector, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None,grid_x=[None, None, None],grid_y = [None, None, None]):
+    def load(self, basedir, file, detector, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, grid_x=[None, None, None], grid_y=[None, None, None]):
         x_stream = 'Mono Energy'
 
         if detector == "MCP":
@@ -415,7 +418,7 @@ class EEMsLoader(Load2d):
             raise TypeError("Detector not defined.")
 
         super().load(basedir, file, x_stream, y_stream, detector, *args, norm=norm, xoffset=xoffset,
-                     xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background,grid_x=grid_x,grid_y=grid_y)
+                     xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background, grid_x=grid_x, grid_y=grid_y)
 
 #########################################################################################
 
