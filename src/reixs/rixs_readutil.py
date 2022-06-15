@@ -5,6 +5,7 @@ import warnings
 # Edge Dict
 from .edges import EdgeDict
 
+
 def XES(mcp_data):
     """Sum the MCP detector image over all recorded datapoints."""
     try:
@@ -16,23 +17,33 @@ def XES(mcp_data):
 
     return sum
 
+
 def rXES(mono_energy, mcp_data_norm, xes_incident_start, xes_incident_end):
     """Calculate resonant emission at selected energy (MCP)."""
     idx_start = (np.abs(xes_incident_start - mono_energy)).argmin()
     idx_end = (np.abs(xes_incident_end - mono_energy)).argmin()
 
+    if idx_start == idx_end:
+        idx_end = idx_start+1
+
     return mcp_data_norm[idx_start:idx_end, :].sum(axis=0)
+
 
 def XRF(sdd_data):
     """Sum the SDD detector image over all recorded datapoints"""
     return np.sum(sdd_data, axis=0)
+
 
 def rXRF(mono_energy, sdd_data_norm, xes_incident_start, xes_incident_end):
     """Calculate resonant emission at selected energy (SDD)."""
     idx_start = (np.abs(xes_incident_start - mono_energy)).argmin()
     idx_end = (np.abs(xes_incident_end - mono_energy)).argmin()
 
+    if idx_start == idx_end:
+        idx_end = idx_start+1
+
     return sdd_data_norm[idx_start:idx_end, :].sum(axis=0)
+
 
 def ROI(PFY_edge=None, iPFY_edge=None):
     """Set a region of interest (ROI) over which to sum PFY (and iPFY)
@@ -60,6 +71,7 @@ def ROI(PFY_edge=None, iPFY_edge=None):
     else:
         raise Exception("Proper ROI bounds not defined.")
 
+
 def PFY(sdd_energy, sdd_data, mesh_current, PFY_edge=None, SDDLowerBound=None, SDDUpperBound=None):
     """ Calculate PFY based on a defined ROI.
 
@@ -83,12 +95,16 @@ def PFY(sdd_energy, sdd_data, mesh_current, PFY_edge=None, SDDLowerBound=None, S
     idx_low_sdd = (np.abs(SDDLowerBound - sdd_energy)).argmin()
     idx_high_sdd = (np.abs(SDDUpperBound - sdd_energy)).argmin()
 
+    if idx_low_sdd == idx_high_sdd:
+        idx_high_sdd = idx_low_sdd+1
+
     # Transform this to PFY spectrum (rows = incident energy points, columns = detector 'space')
     sdd_detector_sum = sdd_data[:,
-                                    idx_low_sdd:idx_high_sdd].sum(axis=1)
+                                idx_low_sdd:idx_high_sdd].sum(axis=1)
     PFY_spec = (sdd_detector_sum/mesh_current)
 
     return PFY_spec
+
 
 def iPFY(sdd_energy, sdd_data, mesh_current, iPFY_edge=None, iSDDLowerBound=None, iSDDUpperBound=None):
     """ Calculate iPFY based on a defined ROI.
@@ -111,11 +127,16 @@ def iPFY(sdd_energy, sdd_data, mesh_current, iPFY_edge=None, iSDDLowerBound=None
 
     iidx_low_sdd = (np.abs(iSDDLowerBound - sdd_energy)).argmin()
     iidx_high_sdd = (np.abs(iSDDUpperBound - sdd_energy)).argmin()
+
+    if iidx_low_sdd == iidx_high_sdd:
+        iidx_high_sdd = iidx_low_sdd+1
+
     sdd_detector_sum_i = sdd_data[:,
-                                        iidx_low_sdd:iidx_high_sdd].sum(axis=1)
+                                  iidx_low_sdd:iidx_high_sdd].sum(axis=1)
     iPFY_spec = 1/(sdd_detector_sum_i/mesh_current)
 
     return iPFY_spec
+
 
 def TFY(sdd_data, mesh_current):
     """Calculate TFY by summing over entire SDD image without ROI."""
@@ -125,9 +146,13 @@ def TFY(sdd_data, mesh_current):
 
     return TFY_spec
 
+
 def specPFY(mcp_energy, mcp_data_norm, mcp_lowE, mcp_highE):
     """Calculate spectrometer PFY based on ROI set."""
     mcp_highE_idx = (np.abs(mcp_highE-mcp_energy)).argmin()
     mcp_lowE_idx = (np.abs(mcp_lowE-mcp_energy)).argmin()
+
+    if mcp_lowE_idx == mcp_highE_idx:
+        mcp_highE_idx = mcp_lowE_idx+1
 
     return mcp_data_norm[:, mcp_lowE_idx:mcp_highE_idx].sum(axis=1)
