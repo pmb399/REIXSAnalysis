@@ -27,8 +27,8 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
             if doesMatchPattern(y_stream, ['rXES']):
                 roi = y_stream.lstrip("rXES[").rstrip("]")
 
-                roi_low = int(roi.split(":")[0])
-                roi_high = int(roi.split(":")[1])
+                roi_low = float(roi.split(":")[0])
+                roi_high = float(roi.split(":")[1])
 
                 return data[arg].rXES(roi_low, roi_high)
 
@@ -38,8 +38,8 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
             elif doesMatchPattern(y_stream, ['rXRF']):
                 roi = y_stream.lstrip("rXRF[").rstrip("]")
 
-                roi_low = int(roi.split(":")[0])
-                roi_high = int(roi.split(":")[1])
+                roi_low = float(roi.split(":")[0])
+                roi_high = float(roi.split(":")[1])
                 return data[arg].rXRF(roi_low, roi_high)
 
             elif y_stream == 'XRF':
@@ -58,15 +58,15 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
                     return data[arg].iPFY(iPFY_edge=roi)
 
                 else:
-                    roi_low = int(roi.split(":")[0])
-                    roi_high = int(roi.split(":")[1])
+                    roi_low = float(roi.split(":")[0])
+                    roi_high = float(roi.split(":")[1])
                     return data[arg].iPFY(iSDDLowerBound=roi_low, iSDDUpperBound=roi_high)
 
             elif doesMatchPattern(y_stream, ["specPFY"]):
                 roi = y_stream.lstrip("specPFY[").rstrip("]")
 
-                roi_low = int(roi.split(":")[0])
-                roi_high = int(roi.split(":")[1])
+                roi_low = float(roi.split(":")[0])
+                roi_high = float(roi.split(":")[1])
                 return data[arg].specPFY(roi_low, roi_high)
 
             elif doesMatchPattern(y_stream, ["PFY"]):
@@ -76,8 +76,8 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
                     return data[arg].PFY(PFY_edge=roi)
 
                 else:
-                    roi_low = int(roi.split(":")[0])
-                    roi_high = int(roi.split(":")[1])
+                    roi_low = float(roi.split(":")[0])
+                    roi_high = float(roi.split(":")[1])
                     return data[arg].PFY(SDDLowerBound=roi_low, SDDUpperBound=roi_high)
 
             elif y_stream == 'XEOL':
@@ -85,8 +85,8 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
 
             elif doesMatchPattern(y_stream, ["rXEOL"]):
                 roi = y_stream.lstrip("rXEOL[").rstrip("]")
-                roi_low = int(roi.split(":")[0])
-                roi_high = int(roi.split(":")[1])
+                roi_low = float(roi.split(":")[0])
+                roi_high = float(roi.split(":")[1])
 
                 return rxeol_spec(data, arg, REIXSobj, roi_low, roi_high, background_scan=background)
 
@@ -95,15 +95,15 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
 
             elif doesMatchPattern(y_stream, ["POY"]):
                 roi = y_stream.lstrip("POY[").rstrip("]")
-                roi_low = int(roi.split(":")[0])
-                roi_high = int(roi.split(":")[1])
+                roi_low = float(roi.split(":")[0])
+                roi_high = float(roi.split(":")[1])
 
                 return poy_spec(data, arg, REIXSobj, roi_low, roi_high, background_scan=background)
 
             elif y_stream == 'EY':
                 return data[arg].sample_current
 
-            #elif y_stream == 'tey':
+            # elif y_stream == 'tey':
             #    # spec mnemonic for sample current
             #    return data[arg].sample_current
 
