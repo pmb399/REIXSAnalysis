@@ -5,6 +5,8 @@ import warnings
 # Edge Dict
 from .edges import EdgeDict
 
+# Util functions
+from .util import check_idx
 
 def XES(mcp_data):
     """Sum the MCP detector image over all recorded datapoints."""
@@ -23,8 +25,7 @@ def rXES(mono_energy, mcp_data_norm, xes_incident_start, xes_incident_end):
     idx_start = (np.abs(xes_incident_start - mono_energy)).argmin()
     idx_end = (np.abs(xes_incident_end - mono_energy)).argmin()
 
-    if idx_start == idx_end:
-        idx_end = idx_start+1
+    idx_start, idx_end = check_idx(idx_start,idx_end)
 
     return mcp_data_norm[idx_start:idx_end, :].sum(axis=0)
 
@@ -39,8 +40,7 @@ def rXRF(mono_energy, sdd_data_norm, xes_incident_start, xes_incident_end):
     idx_start = (np.abs(xes_incident_start - mono_energy)).argmin()
     idx_end = (np.abs(xes_incident_end - mono_energy)).argmin()
 
-    if idx_start == idx_end:
-        idx_end = idx_start+1
+    idx_start, idx_end = check_idx(idx_start,idx_end)
 
     return sdd_data_norm[idx_start:idx_end, :].sum(axis=0)
 
@@ -95,8 +95,7 @@ def PFY(sdd_energy, sdd_data, mesh_current, PFY_edge=None, SDDLowerBound=None, S
     idx_low_sdd = (np.abs(SDDLowerBound - sdd_energy)).argmin()
     idx_high_sdd = (np.abs(SDDUpperBound - sdd_energy)).argmin()
 
-    if idx_low_sdd == idx_high_sdd:
-        idx_high_sdd = idx_low_sdd+1
+    idx_low_sdd, idx_high_sdd = check_idx(idx_low_sdd,idx_high_sdd)
 
     # Transform this to PFY spectrum (rows = incident energy points, columns = detector 'space')
     sdd_detector_sum = sdd_data[:,
@@ -128,8 +127,7 @@ def iPFY(sdd_energy, sdd_data, mesh_current, iPFY_edge=None, iSDDLowerBound=None
     iidx_low_sdd = (np.abs(iSDDLowerBound - sdd_energy)).argmin()
     iidx_high_sdd = (np.abs(iSDDUpperBound - sdd_energy)).argmin()
 
-    if iidx_low_sdd == iidx_high_sdd:
-        iidx_high_sdd = iidx_low_sdd+1
+    iidx_low_sdd, iidx_high_sdd = check_idx(iidx_low_sdd,iidx_high_sdd)
 
     sdd_detector_sum_i = sdd_data[:,
                                   iidx_low_sdd:iidx_high_sdd].sum(axis=1)
@@ -149,10 +147,9 @@ def TFY(sdd_data, mesh_current):
 
 def specPFY(mcp_energy, mcp_data_norm, mcp_lowE, mcp_highE):
     """Calculate spectrometer PFY based on ROI set."""
-    mcp_highE_idx = (np.abs(mcp_highE-mcp_energy)).argmin()
     mcp_lowE_idx = (np.abs(mcp_lowE-mcp_energy)).argmin()
+    mcp_highE_idx = (np.abs(mcp_highE-mcp_energy)).argmin()
 
-    if mcp_lowE_idx == mcp_highE_idx:
-        mcp_highE_idx = mcp_lowE_idx+1
+    mcp_lowE_idx, mcp_highE_idx = check_idx(mcp_lowE_idx,mcp_highE_idx)
 
     return mcp_data_norm[:, mcp_lowE_idx:mcp_highE_idx].sum(axis=1)

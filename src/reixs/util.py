@@ -23,6 +23,24 @@ def doesMatchPattern(string, patterns=[]):
     return False
 
 #########################################################################################
+def get_roi(roi):
+    try:
+        roi_low = float(roi.split(":")[0])
+        roi_high = float(roi.split(":")[1])
+    except:
+        roi_low = float(roi)
+        roi_high = float(roi)
+
+    return roi_low,roi_high
+
+#########################################################################################
+def check_idx(idx_low,idx_high):
+    if idx_low == idx_high:
+        idx_high = idx_low+1
+    
+    return idx_low,idx_high
+
+#########################################################################################
 def check_key_in_dict(key,dic):
     for k,v in dic.items():
         if key == k:

@@ -1,4 +1,5 @@
 import numpy as np
+from .util import check_idx
 
 #########################################################################################
 
@@ -34,8 +35,7 @@ def xeol_idx_lambda(data, arg, lambda_low, lambda_high):
     idx_low = (np.abs(lambda_low - data[arg].xeol_energy)).argmin()
     idx_high = (np.abs(lambda_high - data[arg].xeol_energy)).argmin()
 
-    if idx_low == idx_high:
-        idx_high = idx_low+1
+    idx_low, idx_high = check_idx(idx_low,idx_high)
 
     return idx_low, idx_high
 
