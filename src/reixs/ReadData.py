@@ -107,20 +107,12 @@ class REIXS_HDF5(object):
             """Normalize the counts of the MCP by incident flux at every given datapoint.
                This is only applied to EEMs."""
 
-            mcp_data_norm_init = []
-            for count, i in enumerate(my.mesh_current):
-                mcp_data_norm_i = np.true_divide(my.mcp_data[:, count], i)
-                mcp_data_norm_init.append(mcp_data_norm_i)
-            my.mcp_data_norm = np.array(mcp_data_norm_init)
+            my.mcp_data_norm = np.transpose(rixs_readutil.detector_norm(my.mcp_data,my.mesh_current))
 
             return my.mcp_data_norm
 
         def SDD_norm(my):
-            sdd_data_norm_init = list()
-            for i, mesh_current in enumerate(my.mesh_current):
-                sdd_data_norm_init.append(np.true_divide(
-                    my.sdd_data[i, :], mesh_current))
-            my.sdd_data_norm = np.array(sdd_data_norm_init)
+            my.sdd_data_norm = rixs_readutil.detector_norm(my.sdd_data,my.mesh_current[:,None])
 
             return my.sdd_data_norm
 
@@ -578,11 +570,7 @@ class REIXS_ASCII(object):
             """Normalize the counts of the MCP by incident flux at every given datapoint.
                This is only applied to EEMs."""
 
-            mcp_data_norm_init = []
-            for count, i in enumerate(my.mesh_current):
-                mcp_data_norm_i = np.true_divide(my.mcp_data[:, count], i)
-                mcp_data_norm_init.append(mcp_data_norm_i)
-            my.mcp_data_norm = (np.array(mcp_data_norm_init))
+            my.mcp_data_norm = np.transpose(rixs_readutil.detector_norm(my.mcp_data,my.mesh_current))
 
             return my.mcp_data_norm
 
@@ -600,11 +588,7 @@ class REIXS_ASCII(object):
             return rixs_readutil.rXES(my.mono_energy, my.mcp_data_norm, xes_incident_start, xes_incident_end)
 
         def SDD_norm(my):
-            sdd_data_norm_init = list()
-            for i, mesh_current in enumerate(my.mesh_current):
-                sdd_data_norm_init.append(np.true_divide(
-                    my.sdd_data[i, :], mesh_current))
-            my.sdd_data_norm = np.array(sdd_data_norm_init)
+            my.sdd_data_norm = rixs_readutil.detector_norm(my.sdd_data,my.mesh_current[:,None])
 
             return my.sdd_data_norm
 
