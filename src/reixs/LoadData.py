@@ -5,7 +5,7 @@ from scipy.interpolate import interp1d, interp2d
 
 from bokeh.io import push_notebook
 from bokeh.plotting import show, figure
-from bokeh.models import ColumnDataSource, HoverTool, LinearColorMapper, ColorBar
+from bokeh.models import ColumnDataSource, HoverTool, LinearColorMapper, ColorBar, Span, Label
 
 # Utilities
 import os
@@ -37,6 +37,12 @@ class Load1d:
         self.type = list()
         self.x_stream = list()
         self.filename = list()
+        self.plot_lim_x = [":",":"]
+        self.plot_lim_y = [":",":"]
+        self.legend_loc = 'outside'
+        self.plot_vlines = list()
+        self.plot_hlines = list()
+        self.plot_labels = list()
 
     def load(self, basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, deriv=None, energyloss=None, grid_x=[None, None, None]):
         self.data.append(loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=norm,
@@ -59,6 +65,26 @@ class Load1d:
         self.type.append(y_stream)
         self.filename.append(file)
 
+    def xlim(self,lower,upper):
+        self.plot_lim_x[0] = lower
+        self.plot_lim_x[1] = upper
+
+    def ylim(self,lower,upper):
+        self.plot_lim_y[0] = lower
+        self.plot_lim_y[1] = upper
+
+    def legend_loc(self,pos):
+        self.legend_loc = pos
+
+    def vline(self,pos,**kwargs):
+        self.plot_vlines.append([pos,kwargs])
+    
+    def hline(self,pos,**kwargs):
+        self.plot_hlines.append([pos,kwargs])
+
+    def label(self,pos_x,pos_y,text,**kwargs):
+        self.plot_labels.append([pos_x,pos_y,text,kwargs])
+
     def plot(self, linewidth=4, title=None, xlabel=None, ylabel=None):
         plot_data = defaultdict(list)
         for i, val in enumerate(self.data):
@@ -76,7 +102,7 @@ class Load1d:
 
         source = ColumnDataSource(plot_data)
 
-        p = figure(plot_height=400,
+        p = figure(plot_height=450,plot_width=700,
                    tools="pan,wheel_zoom,box_zoom,reset,crosshair,save")
         p.multi_line(xs='x_stream', ys='y_stream', legend_group="legend",
                      line_width=linewidth, line_color='color', line_alpha=0.6,
@@ -91,6 +117,36 @@ class Load1d:
         ]))
 
         p.toolbar.logo = None
+
+        if self.legend_loc == 'outside':
+            p.add_layout(p.legend[0], 'right')
+        else:
+            p.legend.location = self.legend_loc
+
+        if self.plot_lim_y[0] != ':':
+            p.y_range.start = self.plot_lim_y[0]
+        if self.plot_lim_y[1] != ':':
+            p.y_range.end = self.plot_lim_y[1]
+
+        if self.plot_lim_x[0] != ':':
+            p.x_range.start = self.plot_lim_x[0]
+        if self.plot_lim_x[1] != ':':
+            p.x_range.end = self.plot_lim_x[1]
+
+        if len(self.plot_hlines)>0:
+            for line_props in self.plot_hlines:
+                line = Span(location=line_props[0],dimension='width',**line_props[1])
+                p.add_layout(line)
+
+        if len(self.plot_vlines)>0:
+            for line_props in self.plot_vlines:
+                line = Span(location=line_props[0],dimension='height',**line_props[1])
+                p.add_layout(line)
+
+        if len(self.plot_labels)>0:
+            for label_props in self.plot_labels:
+                label = Label(x=label_props[0],y=label_props[1],text=label_props[2],**label_props[3])
+                p.add_layout(label)
 
         if title != None:
             p.title.text = str(title)
@@ -260,6 +316,12 @@ class Load2d:
         self.norm = list()
         self.grid_x = list()
         self.grid_y = list()
+        self.plot_lim_x = [":",":"]
+        self.plot_lim_y = [":",":"]
+        self.plot_vlines = list()
+        self.plot_hlines = list()
+        self.plot_labels = list()
+
 
     def load(self, basedir, file, x_stream, y_stream, detector, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, grid_x=[None, None, None], grid_y=[None, None, None]):
         if len(args) != 1:
@@ -275,6 +337,23 @@ class Load2d:
         self.filename.append(file)
         self.grid_x.append(grid_x)
         self.grid_y.append(grid_y)
+
+    def xlim(self,lower,upper):
+        self.plot_lim_x[0] = lower
+        self.plot_lim_x[1] = upper
+
+    def ylim(self,lower,upper):
+        self.plot_lim_y[0] = lower
+        self.plot_lim_y[1] = upper
+
+    def vline(self,pos,**kwargs):
+        self.plot_vlines.append([pos,kwargs])
+    
+    def hline(self,pos,**kwargs):
+        self.plot_hlines.append([pos,kwargs])
+
+    def label(self,pos_x,pos_y,text,**kwargs):
+        self.plot_labels.append([pos_x,pos_y,text,kwargs])
 
     def plot(self):
 
@@ -304,9 +383,30 @@ class Load2d:
                                      title='Counts')
                 p.add_layout(color_bar, 'right')
 
-                if self.y_stream[i] == 'SDD Energy':
-                    p.y_range.start = 0
-                    p.y_range.end = 2000
+                if self.plot_lim_y[0] != ':':
+                    p.y_range.start = self.plot_lim_y[0]
+                if self.plot_lim_y[1] != ':':
+                    p.y_range.end = self.plot_lim_y[1]
+
+                if self.plot_lim_x[0] != ':':
+                    p.x_range.start = self.plot_lim_x[0]
+                if self.plot_lim_x[1] != ':':
+                    p.x_range.end = self.plot_lim_x[1]
+
+                if len(self.plot_hlines)>0:
+                    for line_props in self.plot_hlines:
+                        line = Span(location=line_props[0],dimension='width',**line_props[1])
+                        p.add_layout(line)
+
+                if len(self.plot_vlines)>0:
+                    for line_props in self.plot_vlines:
+                        line = Span(location=line_props[0],dimension='height',**line_props[1])
+                        p.add_layout(line)
+
+                if len(self.plot_labels)>0:
+                    for label_props in self.plot_labels:
+                        label = Label(x=label_props[0],y=label_props[1],text=label_props[2],**label_props[3])
+                        p.add_layout(label)
 
                 p.title.text = f'{self.detector[i]} Image for Scan {k}'
                 p.toolbar.logo = None
@@ -405,7 +505,11 @@ class Load2d:
 
 
 class EEMsLoader(Load2d):
-    def load(self, basedir, file, detector, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, grid_x=[None, None, None], grid_y=[None, None, None]):
+    def __init__(self):
+        self.energyloss = list()
+        super().__init__()
+
+    def load(self, basedir, file, detector, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, grid_x=[None, None, None], grid_y=[None, None, None],energyloss=False):
         x_stream = 'Mono Energy'
 
         if detector == "MCP":
@@ -417,8 +521,61 @@ class EEMsLoader(Load2d):
         else:
             raise TypeError("Detector not defined.")
 
+        self.energyloss.append(energyloss)
+
         super().load(basedir, file, x_stream, y_stream, detector, *args, norm=norm, xoffset=xoffset,
                      xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background, grid_x=grid_x, grid_y=grid_y)
+
+    def grid_data(self, v, i):
+        if self.energyloss[i] == False:
+            return super().grid_data(v, i)
+        
+        # We will be swicthing x and y later
+        # Here, grid_x and grid_y will already refer to switched axes
+        else:
+            if self.grid_y[i] == [None,None,None]:
+                xmin = v.x_data.min()
+                xmax = v.x_data.max()
+                x_points = int(np.ceil((xmax-xmin)/np.abs(np.diff(v.x_data)).min())) + 1
+            else:
+                xmin = self.grid_y[i][0]
+                xmax = self.grid_y[i][1]
+                x_points = int(np.ceil((xmax-xmin)/self.grid_y[i][2])) + 1
+
+            energy_loss_axes = list()
+
+            for monoE in v.x_data:
+                energy_loss_axes.append(monoE-v.y_data)
+
+            if self.grid_x[i] == [None,None,None]:
+                ymin = energy_loss_axes[-1][-1]
+                ymax = energy_loss_axes[0][0]
+                y_points = int(np.abs(np.ceil((ymax-ymin)/np.diff(energy_loss_axes[0]).min())))
+
+            else:
+                ymin = self.grid_x[i][0]
+                ymax = self.grid_x[i][1]
+                y_points = int(np.ceil((ymax-ymin)/self.grid_x[i][2])) + 1
+
+            new_x = np.linspace(xmin, xmax, x_points, endpoint=True)
+            new_y = np.linspace(ymin, ymax, y_points, endpoint=True)
+
+            scatter_z = np.zeros((len(v.x_data),len(new_y)))
+
+            for idx,val in enumerate(np.transpose(v.detector)):
+                scatter_z[idx,:] = interp1d(energy_loss_axes[idx],val)(new_y)
+
+            f = interp2d(v.x_data,new_y,np.transpose(scatter_z))
+            new_z = f(new_x,new_y)
+
+            # Switch x and y, so that we plot MCP Energy loss on horizontal axis
+            # Overwrite stream names
+            # Possibe since there can only be one scan per loader
+
+            self.x_stream[i] = "Energy loss (eV)"
+            self.y_stream[i] = "Mono Energy (eV)"
+
+            return ymin, ymax, xmin, xmax, new_x, new_y, np.transpose(new_z)
 
 #########################################################################################
 
