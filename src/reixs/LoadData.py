@@ -73,7 +73,7 @@ class Load1d:
         self.plot_lim_y[0] = lower
         self.plot_lim_y[1] = upper
 
-    def legend_loc(self,pos):
+    def plot_legend(self,pos):
         self.legend_loc = pos
 
     def vline(self,pos,**kwargs):
