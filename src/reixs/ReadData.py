@@ -36,18 +36,9 @@ class REIXS_HDF5(object):
 
     def __init__(self, baseName, header_file):
         try:
-            file = os.path.join(baseName, header_file)
+            self.file = os.path.join(baseName, header_file)
         except:
             raise TypeError("You did not specify a directory path.")
-
-        # Load the HDF5 container
-        self.f = h5py.File(file, 'r')
-
-        # Create dictionary for scan numbers
-        self.scanIndexDictHeader = dict()
-        for k in self.f.keys():
-            if k.startswith("SCAN_"):
-                self.scanIndexDictHeader[int(k.split("_")[1])] = k
 
     def Scan(self, scan):
         return self.myScan(self, scan)
@@ -56,52 +47,60 @@ class REIXS_HDF5(object):
 
         def __init__(my, self, scan):
             try:
-                my.scan = self.scanIndexDictHeader[scan]
+                with h5py.File(self.file, 'r') as f:
+
+                    # Create dictionary for scan numbers
+                    scanIndexDictHeader = dict()
+                    for k in f.keys():
+                        if k.startswith("SCAN_"):
+                            scanIndexDictHeader[int(k.split("_")[1])] = k
+                    my.scan = scanIndexDictHeader[scan]
+
+                    try:
+                        my.mono_energy = np.array(f[f'{my.scan}/Data/beam'])
+                    except:
+                        raise TypeError("Problem detecting energy.")
+
+                    try:
+                        my.mesh_current = np.array(f[f'{my.scan}/Data/i0'])
+                    except:
+                        raise TypeError("Problem detecting mesh current.")
+
+                    try:
+                        my.sample_current = np.array(f[f'{my.scan}/Data/tey'])
+                    except:
+                        raise TypeError("Problem detecting sample current.")
+
+                    try:
+                        my.TEY = my.sample_current/my.mesh_current
+                    except:
+                        raise ValueError("Problem calculating TEY.")
+
+                    try:
+                        my.sdd_data = np.array(f[f'{my.scan}/Data/sddMCA'])
+                        my.sdd_energy = np.array(
+                            f[f'{my.scan}/Data/sddMCA_scale'])
+                    except:
+                        warnings.warn("Could not load SDD data / SDD energy scale")
+
+                    try:
+                        my.mcp_data = np.transpose(
+                            np.array(f[f'{my.scan}/Data/mcpMCA']))
+                        my.mcp_energy = np.array(
+                            f[f'{my.scan}/Data/mcpMCA_scale'])
+                    except:
+                        warnings.warn("Could not load MCP data / MCP energy scale")
+
+                    my.sca_data = pd.DataFrame()
+                    try:
+                        for entry in f[f'{my.scan}/Endstation/Counters']:
+                            my.sca_data[str(entry)] = np.array(
+                                f[f'{my.scan}/Endstation/Counters/{entry}'])
+                    except:
+                        raise UserWarning("Could not load SCAs from HDF5 container.")
+
             except:
                 raise ValueError("Scan not defined")
-
-            try:
-                my.mono_energy = np.array(self.f[f'{my.scan}/Data/beam'])
-            except:
-                raise TypeError("Problem detecting energy.")
-
-            try:
-                my.mesh_current = np.array(self.f[f'{my.scan}/Data/i0'])
-            except:
-                raise TypeError("Problem detecting mesh current.")
-
-            try:
-                my.sample_current = np.array(self.f[f'{my.scan}/Data/tey'])
-            except:
-                raise TypeError("Problem detecting sample current.")
-
-            try:
-                my.TEY = my.sample_current/my.mesh_current
-            except:
-                raise ValueError("Problem calculating TEY.")
-
-            try:
-                my.sdd_data = np.array(self.f[f'{my.scan}/Data/sddMCA'])
-                my.sdd_energy = np.array(
-                    self.f[f'{my.scan}/Data/sddMCA_scale'])
-            except:
-                warnings.warn("Could not load SDD data / SDD energy scale")
-
-            try:
-                my.mcp_data = np.transpose(
-                    np.array(self.f[f'{my.scan}/Data/mcpMCA']))
-                my.mcp_energy = np.array(
-                    self.f[f'{my.scan}/Data/mcpMCA_scale'])
-            except:
-                warnings.warn("Could not load MCP data / MCP energy scale")
-
-            my.sca_data = pd.DataFrame()
-            try:
-                for entry in self.f[f'{my.scan}/Endstation/Counters']:
-                    my.sca_data[str(entry)] = np.array(
-                        self.f[f'{my.scan}/Endstation/Counters/{entry}'])
-            except:
-                raise UserWarning("Could not load SCAs from HDF5 container.")
 
         def MCP_norm(my):
             """Normalize the counts of the MCP by incident flux at every given datapoint.
