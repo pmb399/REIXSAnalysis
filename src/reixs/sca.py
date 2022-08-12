@@ -191,6 +191,9 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
 
         # Transforms RIXS to energy loss scale if incident energy is given
         if energyloss != None:
-            data[arg].x_stream = energyloss-data[arg].x_stream
+            if energyloss == True:
+                data[arg].x_stream = np.average(data[arg].mono_energy)-data[arg].x_stream
+            else:
+                data[arg].x_stream = energyloss-data[arg].x_stream
 
     return data
