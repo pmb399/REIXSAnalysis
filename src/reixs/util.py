@@ -3,7 +3,7 @@ from itertools import groupby
 import pandas as pd
 import numpy as np
 from scipy.interpolate import interp1d
-
+from collections.abc import MutableMapping
 
 #########################################################################################
 def all_list_entries_equal(iterable):
@@ -45,6 +45,16 @@ def check_key_in_dict(key,dic):
     for k,v in dic.items():
         if key == k:
             return True
+
+#########################################################################################
+def flatten(d):
+    items = []
+    for k, v in d.items():
+        if isinstance(v, MutableMapping):
+            items.extend(flatten(v).items())
+        else:
+            items.append((k, v))
+    return dict(items)
 
 #########################################################################################            
 # Palette for Bokeh Plots
