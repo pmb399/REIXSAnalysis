@@ -8,7 +8,12 @@ def XEOL_background_removal(data, arg, REIXSobj, background_scan=None):
 
     if background_scan != None:
         # 1 Sum the background
-        background_data = REIXSobj.Scan(background_scan).xeol_data
+        if background_scan == True:
+            background_data = data[arg].xeol_background
+        elif type(background_scan) in [int]:
+            background_data = REIXSobj.Scan(background_scan).xeol_data
+        else:
+            raise TypeError("Background Scan undefined.")
         background_sum = background_data.sum(axis=0)
 
         # 2 Normalize to average background frame

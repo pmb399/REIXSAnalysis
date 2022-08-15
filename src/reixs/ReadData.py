@@ -84,6 +84,14 @@ class REIXS_HDF5(object):
                         warnings.warn("Could not load SDD data / SDD energy scale")
 
                     try:
+                        my.xeol_data = np.array(f[f'{my.scan}/Endstation/Detectors/XEOL/xeolMCA'])
+                        my.xeol_energy = np.array(f[f'{my.scan}/Endstation/Detectors/XEOL/xeolMCA_scale'])
+                        my.xeol_background = np.array(f[f'{my.scan}/Endstation/Detectors/XEOL/xeolMCA_back'])
+
+                    except:
+                        warnings.warn("Could not load XEOL data / XEOL emission scale")
+
+                    try:
                         my.mcp_data = np.transpose(
                             np.array(f[f'{my.scan}/Data/mcpMCA']))
                         my.mcp_energy = np.array(
