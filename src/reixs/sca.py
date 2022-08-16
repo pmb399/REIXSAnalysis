@@ -2,14 +2,13 @@ from .util import doesMatchPattern, check_key_in_dict, get_roi
 from .ReadData import REIXS
 from .edges import EdgeDict
 from .xeol import *
-from .simplemath import apply_offset, take_derivative1d
+from .simplemath import apply_offset, grid_data, apply_savgol
 import warnings
 import numpy as np
 from .parser import math_stream
-from scipy.interpolate import interp1d
 
 
-def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, deriv=None, energyloss=None, grid_x=[None, None, None]):
+def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, energyloss=None, grid_x=[None, None, None], savgol=None):
     special_streams = ['TEY', 'TFY', 'PFY', 'iPFY', 'XES', 'rXES', 'specPFY',
                        'XRF', 'rXRF', 'XEOL', 'rXEOL', 'POY', 'TOY', 'EY', 'Sample', 'Mesh']  # all special inputs
     XAS_streams = ['TEY', 'TFY', 'PFY', 'iPFY', 'specPFY', 'POY',
@@ -139,17 +138,6 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
         else:
             return get_sca_data(x_stream, data, arg)
 
-    def grid_data(x_stream, y_stream, grid):
-        xmin = grid[0]
-        xmax = grid[1]
-
-        numPoints = int(np.ceil((xmax-xmin)/grid[2])) + 1
-        new_x = np.linspace(xmin, xmax, numPoints)
-        f = interp1d(x_stream, y_stream, fill_value='extrapolate')
-        new_y = f(new_x)
-
-        return new_x, new_y
-
     data = dict()
     REIXSobj = REIXS(basedir, file)
     for arg in args:
@@ -180,14 +168,22 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
 
         data[arg].y_stream = apply_offset(
             data[arg].y_stream, yoffset, ycoffset)
+               
+        if savgol != None:
+            if isinstance(savgol,tuple):
+                if len(savgol) == 2:
+                    savgol_deriv = 0
+                elif len(savgol) == 3:
+                    savgol_deriv = savgol[2]
+                else:
+                    raise TypeError("Savgol smoothing arguments incorrect.")
+                data[arg].x_stream, data[arg].y_stream = apply_savgol(data[arg].x_stream,data[arg].y_stream,savgol[0],savgol[1],savgol_deriv)
 
-        # Take derivatives
-        if deriv != None:
-            data[arg].y_stream = take_derivative1d(
-                data[arg].y_stream, data[arg].x_stream, deriv)
-            if norm == True:
-                data[arg].y_stream = data[arg].y_stream / \
+                if norm == True:
+                    data[arg].y_stream = data[arg].y_stream / \
                     data[arg].y_stream.max()
+            else:
+                raise TypeError("Savgol smoothing arguments incorrect.")
 
         # Transforms RIXS to energy loss scale if incident energy is given
         if energyloss != None:

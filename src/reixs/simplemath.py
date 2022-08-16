@@ -1,5 +1,6 @@
 import numpy as np
-
+from scipy.interpolate import interp1d
+from scipy.signal import savgol_filter
 
 def apply_offset(stream, offset=None, coffset=None):
     if offset != None:
@@ -22,6 +23,16 @@ def apply_offset(stream, offset=None, coffset=None):
     else:
         return stream
 
+def grid_data(x_stream, y_stream, grid):
+    xmin = grid[0]
+    xmax = grid[1]
+
+    numPoints = int(np.ceil((xmax-xmin)/grid[2])) + 1
+    new_x = np.linspace(xmin, xmax, numPoints)
+    f = interp1d(x_stream, y_stream, fill_value='extrapolate')
+    new_y = f(new_x)
+
+    return new_x, new_y
 
 def take_derivative1d(x, y, deg):
     if deg == 1:
@@ -41,3 +52,17 @@ def take_derivative2d(z, x, y, deg):
         return np.gradient(dz, x, y)
     else:
         raise TypeError("No other derivatives implemented.")
+
+def apply_savgol(x,y,window,polyorder,deriv):
+    xmin = x.min()
+    xmax = x.max()
+    x_diff = np.abs(np.diff(x)).min()
+    new_x, new_y  = grid_data(x,y,[xmin,xmax,x_diff])
+
+    if deriv == 0:
+        delta = 1
+    else:
+        delta = x_diff
+    smooth_y = savgol_filter(new_y,window,polyorder,deriv,delta)
+
+    return new_x,smooth_y

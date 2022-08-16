@@ -1,10 +1,9 @@
 import numpy as np
 from scipy.interpolate import interp1d
 from .sca import loadSCAscans
-from .simplemath import apply_offset
+from .simplemath import apply_offset, apply_savgol
 
-
-def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None,energyloss=None,grid_x=[None,None,None]):
+def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None,energyloss=None,grid_x=[None,None,None],savgol=None):
     class added_object:
         def __init__(self):
             pass
@@ -15,7 +14,7 @@ def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False,
 
     # Get the appropriate data first
     Scandata = loadSCAscans(basedir, file, x_stream, y_stream, *args,
-                            norm=False, is_XAS=is_XAS, background=background, deriv=deriv,energyloss=None,grid_x=grid_x)
+                            norm=False, is_XAS=is_XAS, background=background,energyloss=None,grid_x=grid_x)
 
     for i, (k, v) in enumerate(Scandata.items()):
         if i == 0:
@@ -52,13 +51,29 @@ def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False,
     data[0].x_stream = apply_offset(data[0].x_stream, xoffset, xcoffset)
     data[0].y_stream = apply_offset(data[0].y_stream, yoffset, ycoffset)
 
+    if savgol != None:
+        if isinstance(savgol,tuple):
+            if len(savgol) == 2:
+                savgol_deriv = 0
+            elif len(savgol) == 3:
+                savgol_deriv = savgol[2]
+            else:
+                raise TypeError("Savgol smoothing arguments incorrect.")
+            data[0].x_stream, data[0].y_stream = apply_savgol(data[0].x_stream,data[0].y_stream,savgol[0],savgol[1],savgol_deriv)
+
+            if norm == True:
+                data[0].y_stream = data[0].y_stream / \
+                data[0].y_stream.max()
+        else:
+            raise TypeError("Savgol smoothing arguments incorrect.")
+
     if energyloss!=None:
         data[0].x_stream = energyloss-data[0].x_stream
 
     return data
 
 
-def ScanSubtraction(basedir, file, x_stream, y_stream, *args, avg=True, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None,energyloss=None,grid_x=[None,None,None]):
+def ScanSubtraction(basedir, file, x_stream, y_stream, *args, avg=True, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None,energyloss=None,grid_x=[None,None,None], savgol=None):
     class added_object:
         def __init__(self):
             pass
@@ -69,7 +84,7 @@ def ScanSubtraction(basedir, file, x_stream, y_stream, *args, avg=True, norm=Fal
 
     # Get the appropriate data first
     Scandata = loadSCAscans(basedir, file, x_stream, y_stream, *args,
-                            norm=False, is_XAS=is_XAS, background=background, deriv=deriv,energyloss=None,grid_x=grid_x,)
+                            norm=False, is_XAS=is_XAS, background=background,energyloss=None,grid_x=grid_x,)
 
     for i, (k, v) in enumerate(Scandata.items()):
         if i == 0:
@@ -105,6 +120,22 @@ def ScanSubtraction(basedir, file, x_stream, y_stream, *args, avg=True, norm=Fal
 
     data[0].x_stream = apply_offset(data[0].x_stream, xoffset, xcoffset)
     data[0].y_stream = apply_offset(data[0].y_stream, yoffset, ycoffset)
+
+    if savgol != None:
+        if isinstance(savgol,tuple):
+            if len(savgol) == 2:
+                savgol_deriv = 0
+            elif len(savgol) == 3:
+                savgol_deriv = savgol[2]
+            else:
+                raise TypeError("Savgol smoothing arguments incorrect.")
+            data[0].x_stream, data[0].y_stream = apply_savgol(data[0].x_stream,data[0].y_stream,savgol[0],savgol[1],savgol_deriv)
+
+            if norm == True:
+                data[0].y_stream = data[0].y_stream / \
+                data[0].y_stream.max()
+        else:
+            raise TypeError("Savgol smoothing arguments incorrect.")
 
     if energyloss!=None:
         data[0].x_stream = energyloss-data[0].x_stream
