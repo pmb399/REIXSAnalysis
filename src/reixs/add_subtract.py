@@ -3,7 +3,7 @@ from scipy.interpolate import interp1d
 from .sca import loadSCAscans
 from .simplemath import apply_offset, apply_savgol
 
-def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None,energyloss=None,grid_x=[None,None,None],savgol=None):
+def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None,energyloss=None,grid_x=[None,None,None],savgol=None,binsize=None):
     class added_object:
         def __init__(self):
             pass
@@ -14,7 +14,7 @@ def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False,
 
     # Get the appropriate data first
     Scandata = loadSCAscans(basedir, file, x_stream, y_stream, *args,
-                            norm=False, is_XAS=is_XAS, background=background,energyloss=None,grid_x=grid_x)
+                            norm=False, is_XAS=is_XAS, background=background,energyloss=None,grid_x=grid_x,binsize=binsize)
 
     for i, (k, v) in enumerate(Scandata.items()):
         if i == 0:
@@ -73,7 +73,7 @@ def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False,
     return data
 
 
-def ScanSubtraction(basedir, file, x_stream, y_stream, *args, avg=True, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None,energyloss=None,grid_x=[None,None,None], savgol=None):
+def ScanSubtraction(basedir, file, x_stream, y_stream, *args, avg=True, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None,energyloss=None,grid_x=[None,None,None], savgol=None,binsize=None):
     class added_object:
         def __init__(self):
             pass
@@ -84,7 +84,7 @@ def ScanSubtraction(basedir, file, x_stream, y_stream, *args, avg=True, norm=Fal
 
     # Get the appropriate data first
     Scandata = loadSCAscans(basedir, file, x_stream, y_stream, *args,
-                            norm=False, is_XAS=is_XAS, background=background,energyloss=None,grid_x=grid_x,)
+                            norm=False, is_XAS=is_XAS, background=background,energyloss=None,grid_x=grid_x,binsize=binsize)
 
     for i, (k, v) in enumerate(Scandata.items()):
         if i == 0:

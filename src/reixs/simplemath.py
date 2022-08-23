@@ -34,6 +34,26 @@ def grid_data(x_stream, y_stream, grid):
 
     return new_x, new_y
 
+def bin_data(x_data,y_data,binsize):
+    if (np.log(binsize)/np.log(2)).is_integer():
+        pass
+    else:
+        raise ValueError("Bin size must be exponents of 2.")
+
+    bins = len(x_data)/binsize
+
+    x_splits = np.split(x_data,bins)
+    y_splits = np.split(y_data,bins)
+
+    new_x = list()
+    new_y = list()
+
+    for idx,val in enumerate(x_splits):
+        new_x.append(np.mean(val))
+        new_y.append(np.mean(y_splits[idx]))
+
+    return np.array(new_x), np.array(new_y)
+
 def take_derivative1d(x, y, deg):
     if deg == 1:
         return np.gradient(y, x)

@@ -2,13 +2,13 @@ from .util import doesMatchPattern, check_key_in_dict, get_roi
 from .ReadData import REIXS
 from .edges import EdgeDict
 from .xeol import *
-from .simplemath import apply_offset, grid_data, apply_savgol
+from .simplemath import apply_offset, grid_data, apply_savgol, bin_data
 import warnings
 import numpy as np
 from .parser import math_stream
 
 
-def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, energyloss=None, grid_x=[None, None, None], savgol=None):
+def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, energyloss=None, grid_x=[None, None, None], savgol=None, binsize=None):
     special_streams = ['TEY', 'TFY', 'PFY', 'iPFY', 'XES', 'rXES', 'specPFY',
                        'XRF', 'rXRF', 'XEOL', 'rXEOL', 'POY', 'TOY', 'EY', 'Sample', 'Mesh']  # all special inputs
     XAS_streams = ['TEY', 'TFY', 'PFY', 'iPFY', 'specPFY', 'POY',
@@ -149,6 +149,10 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
 
         # Assign the calculated result to the x_stream of the object in data dict
         data[arg].x_stream = math_stream(x_stream, data, arg, get_x_data)
+
+        #Bin the data if requested
+        if binsize != None:
+            data[arg].x_stream, data[arg].y_stream = bin_data(data[arg].x_stream,data[arg].y_stream,binsize)
 
         # Grid the data if specified
         if grid_x != [None, None, None]:
