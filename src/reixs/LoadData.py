@@ -63,7 +63,6 @@ class Load1d:
 
     def subtract(self, basedir, file, x_stream, y_stream, *args, **kwargs):
         kwargs.setdefault("norm",False)
-        kwargs.setdefault("avg",False)
         kwargs.setdefault("is_XAS",False)
         self.data.append(ScanSubtraction(basedir, file, x_stream, y_stream, *args, **kwargs))
         self.x_stream.append(x_stream)
@@ -237,7 +236,6 @@ class XASLoader(Load1d):
 
     def subtract(self, basedir, file, y_stream, *args, **kwargs):
         x_stream = "Mono Energy"
-        kwargs.setdefault("avg",True)
         kwargs.setdefault("norm",True)        
         kwargs["is_XAS"] = True
         super().subtract(basedir, file, x_stream, y_stream, *args, **kwargs)
@@ -264,7 +262,6 @@ class XESLoader(Load1d):
 
     def subtract(self, basedir, file, y_stream, *args, **kwargs):
         x_stream = "MCP Energy"
-        kwargs.setdefault("avg",False)
         kwargs.setdefault("norm",False)
         super().subtract(basedir, file, x_stream, y_stream, *
                          args, **kwargs)
@@ -292,7 +289,6 @@ class XRFLoader(Load1d):
     def subtract(self, basedir, file, y_stream, *args, **kwargs):
         x_stream = "SDD Energy"
         kwargs.setdefault("norm",False)
-        kwargs.setdefault("avg",False)
         super().subtract(basedir, file, x_stream, y_stream, *
                          args, **kwargs)
 
@@ -318,7 +314,6 @@ class XEOLLoader(Load1d):
     def subtract(self, basedir, file, y_stream, *args, **kwargs):
         x_stream = "XEOL Energy"
         kwargs.setdefault("norm",False)
-        kwargs.setdefault("avg",False)
         super().subtract(basedir, file, x_stream, y_stream, *args, **kwargs)
 
 

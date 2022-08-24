@@ -36,7 +36,7 @@ def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False,
             name += "_" + str(k)
 
     if avg == True:
-        MASTER_y_stream = MASTER_y_stream/(i+1)
+        MASTER_y_stream = MASTER_y_stream/len(args)
 
     data = dict()
     data[0] = added_object()
@@ -73,7 +73,7 @@ def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False,
     return data
 
 
-def ScanSubtraction(basedir, file, x_stream, y_stream, *args, avg=True, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None,energyloss=None,grid_x=[None,None,None], savgol=None,binsize=None):
+def ScanSubtraction(basedir, file, x_stream, y_stream, *args, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None,energyloss=None,grid_x=[None,None,None], savgol=None,binsize=None):
     class added_object:
         def __init__(self):
             pass
@@ -82,31 +82,48 @@ def ScanSubtraction(basedir, file, x_stream, y_stream, *args, avg=True, norm=Fal
         if args.count(i) > 1:
             raise ValueError("Cannot add the same scan to itself")
 
-    # Get the appropriate data first
-    Scandata = loadSCAscans(basedir, file, x_stream, y_stream, *args,
-                            norm=False, is_XAS=is_XAS, background=background,energyloss=None,grid_x=grid_x,binsize=binsize)
+    if len(args) == 2 and type(args[0])==list and type(args[1])==list:
+        minuend = ScanAddition(basedir, file, x_stream, y_stream, *args[0], avg=False, norm=norm, is_XAS=is_XAS, background=background, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset,energyloss=energyloss,grid_x=grid_x,savgol=savgol,binsize=binsize)
+        subtrahend = ScanAddition(basedir, file, x_stream, y_stream, *args[1], avg=False, norm=norm, is_XAS=is_XAS, background=background, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset,energyloss=energyloss,grid_x=grid_x,savgol=savgol,binsize=binsize)
 
-    for i, (k, v) in enumerate(Scandata.items()):
-        if i == 0:
-            MASTER_x_stream = v.x_stream
-            MASTER_y_stream = v.y_stream
-            name = str(k) + '-'
-        else:
-            if y_stream == 'XES' or y_stream.startswith('rXES'):
-                if not np.array_equal(MASTER_x_stream, v.x_stream):
-                    raise ValueError(
-                        "Cannot subtract emission spectra with different energy scales.")
-                else:
-                    MASTER_y_stream -= v.y_stream
+        MASTER_x_stream = minuend[0].x_stream
+        MASTER_y_stream = minuend[0].y_stream
+        name = f"{args[0]}-{args[1]}"
+
+        if y_stream == 'XES' or y_stream.startswith('rXES'):
+            if not np.array_equal(MASTER_x_stream, subtrahend[0].x_stream):
+                raise ValueError(
+                    "Cannot subtract emission spectra with different energy scales.")
             else:
-                interp = interp1d(v.x_stream, v.y_stream,
-                                  fill_value='extrapolate')(MASTER_x_stream)
-                MASTER_y_stream -= interp
+                MASTER_y_stream -= subtrahend[0].y_stream
+        else:
+            interp = interp1d(subtrahend[0].x_stream, subtrahend[0].y_stream,
+                            fill_value='extrapolate')(MASTER_x_stream)
+            MASTER_y_stream -= interp
 
-            name += "_" + str(k)
+    else:
+        # Get the appropriate data first
+        Scandata = loadSCAscans(basedir, file, x_stream, y_stream, *args,
+                                norm=False, is_XAS=is_XAS, background=background,energyloss=None,grid_x=grid_x,binsize=binsize)
 
-    if avg == True:
-        MASTER_y_stream = MASTER_y_stream/(i+1)
+        for i, (k, v) in enumerate(Scandata.items()):
+            if i == 0:
+                MASTER_x_stream = v.x_stream
+                MASTER_y_stream = v.y_stream
+                name = str(k) + '-'
+            else:
+                if y_stream == 'XES' or y_stream.startswith('rXES'):
+                    if not np.array_equal(MASTER_x_stream, v.x_stream):
+                        raise ValueError(
+                            "Cannot subtract emission spectra with different energy scales.")
+                    else:
+                        MASTER_y_stream -= v.y_stream
+                else:
+                    interp = interp1d(v.x_stream, v.y_stream,
+                                    fill_value='extrapolate')(MASTER_x_stream)
+                    MASTER_y_stream -= interp
+
+                name += "_" + str(k)
 
     data = dict()
     data[0] = added_object()
