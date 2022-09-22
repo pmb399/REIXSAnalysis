@@ -10,6 +10,8 @@ from bokeh.models import ColumnDataSource, HoverTool, LinearColorMapper, ColorBa
 # Utilities
 import os
 from collections import defaultdict
+import io
+import shutil
 
 # Widgets
 import ipywidgets as widgets
@@ -160,7 +162,8 @@ class Load1d:
             p.yaxis.axis_label = str(ylabel)
         show(p)
 
-    def export(self, filename):
+    def get_data(self):
+
         df = pd.DataFrame()
         files = list()
 
@@ -179,6 +182,12 @@ class Load1d:
                 df = df.append(s2)
 
         dfT = df.transpose(copy=True)
+
+        return dfT, files
+
+    def export(self, filename):
+
+        dfT, files = self.get_data()
 
         with open(f"{filename}.csv", 'w') as f:
             string = '# '
@@ -463,35 +472,49 @@ class Load2d:
 
         return xmin, xmax, ymin, ymax, new_x, new_y, new_z
 
-    def export(self, filename):
+    def get_data(self):
         df = pd.DataFrame()
-        with open(f"{filename}.txt_scale", "w") as f:
-            with open(f"{filename}.txt_matrix", "w") as g:
-                for i, val in enumerate(self.data):
-                    for k, v in val.items():
-                        xmin, xmax, ymin, ymax, new_x, new_y, new_z = self.grid_data(
-                            v, i)
-                        f.write("========================\n")
-                        f.write(
-                            f"F~{self.filename[i]}_S{v.scan}_{self.detector[i]}_{self.x_stream[i]}_{self.y_stream[i]}\n")
-                        f.write("========================\n")
+        f = io.StringIO()
+        g = io.StringIO()
+        for i, val in enumerate(self.data):
+            for k, v in val.items():
+                xmin, xmax, ymin, ymax, new_x, new_y, new_z = self.grid_data(
+                    v, i)
+                f.write("========================\n")
+                f.write(
+                    f"F~{self.filename[i]}_S{v.scan}_{self.detector[i]}_{self.x_stream[i]}_{self.y_stream[i]}\n")
+                f.write("========================\n")
 
-                        g.write("========================\n")
-                        g.write(
-                            f"F~{self.filename[i]}_S{v.scan}_{self.detector[i]}_{self.x_stream[i]}_{self.y_stream[i]}\n")
-                        g.write("========================\n")
+                g.write("========================\n")
+                g.write(
+                    f"F~{self.filename[i]}_S{v.scan}_{self.detector[i]}_{self.x_stream[i]}_{self.y_stream[i]}\n")
+                g.write("========================\n")
 
-                        s1 = pd.Series(
-                            new_x, name="Motor Scale Gridded")
-                        df = df.append(s1)
-                        s2 = pd.Series(
-                            new_y, name="Detector Scale Gridded")
-                        df = df.append(s2)
-                        dfT = df.transpose(copy=True)
-                        dfT.to_csv(f, index=False, line_terminator='\n')
+                s1 = pd.Series(
+                    new_x, name="Motor Scale Gridded")
+                df = df.append(s1)
+                s2 = pd.Series(
+                    new_y, name="Detector Scale Gridded")
+                df = df.append(s2)
+                dfT = df.transpose(copy=True)
+                dfT.to_csv(f, index=False, line_terminator='\n')
 
-                        g.write("=== Image ===\n")
-                        np.savetxt(g, new_z, fmt="%.9g")
+                g.write("=== Image ===\n")
+                np.savetxt(g, new_z, fmt="%.9g")
+
+            return f, g
+
+    def export(self, filename):
+
+        f, g, = self.get_data()
+
+        with open(f"{filename}.txt_scale", "a") as scales:
+            f.seek(0)
+            shutil.copyfileobj(f,scales)
+
+        with open(f"{filename}.txt_matrix", "a") as matrix:
+            g.seek(0)
+            shutil.copyfileobj(g,matrix)
 
         print(f"Successfully wrote Image data to {filename}.txt")
 
@@ -669,29 +692,42 @@ class LoadMesh:
 
         return xmin, xmax, ymin, ymax, xedge, yedge, new_z, zmin, zmax
 
+    def get_data(self):
+        f = io.StringIO()
+        g = io.StringIO()
+        for i, val in enumerate(self.data):
+            for k, v in val.items():
+                xmin, xmax, ymin, ymax, new_x, new_y, new_z, zmin, zmax = self.grid_data(
+                    v)
+                f.write("========================\n")
+                f.write(
+                    f"F~{self.filename[i]}_S{v.scan}_{self.z_stream[i]}_{self.x_stream[i]}_{self.y_stream[i]}\n")
+                f.write("========================\n")
+
+                g.write("========================\n")
+                g.write(
+                    f"F~{self.filename[i]}_S{v.scan}_{self.z_stream[i]}_{self.x_stream[i]}_{self.y_stream[i]}\n")
+                g.write("========================\n")
+
+                f.write("=== x-axis bins ===\n")
+                np.savetxt(f, new_x)
+                f.write("=== y-axis bins ===\n")
+                np.savetxt(f, new_y)
+                g.write("=== Histogram ===\n")
+                np.savetxt(g, new_z, fmt="%.9g")
+        return f, g
+
     def export(self, filename):
-        with open(f"{filename}.txt_scale", "a") as f:
-            with open(f"{filename}.txt_matrix", "a") as g:
-                for i, val in enumerate(self.data):
-                    for k, v in val.items():
-                        xmin, xmax, ymin, ymax, new_x, new_y, new_z, zmin, zmax = self.grid_data(
-                            v)
-                        f.write("========================\n")
-                        f.write(
-                            f"F~{self.filename[i]}_S{v.scan}_{self.z_stream[i]}_{self.x_stream[i]}_{self.y_stream[i]}\n")
-                        f.write("========================\n")
 
-                        g.write("========================\n")
-                        g.write(
-                            f"F~{self.filename[i]}_S{v.scan}_{self.z_stream[i]}_{self.x_stream[i]}_{self.y_stream[i]}\n")
-                        g.write("========================\n")
+        f, g, = self.get_data()
 
-                        f.write("=== x-axis bins ===\n")
-                        np.savetxt(f, new_x)
-                        f.write("=== y-axis bins ===\n")
-                        np.savetxt(f, new_y)
-                        g.write("=== Histogram ===\n")
-                        np.savetxt(g, new_z, fmt="%.9g")
+        with open(f"{filename}.txt_scale", "a") as scales:
+            f.seek(0)
+            shutil.copyfileobj(f,scales)
+
+        with open(f"{filename}.txt_matrix", "a") as matrix:
+            g.seek(0)
+            shutil.copyfileobj(g,matrix)
 
         print(f"Successfully wrote Histogram data to {filename}.txt")
 
@@ -786,7 +822,7 @@ class ImageROILoader():
             p.yaxis.axis_label = str(ylabel)
         show(p)
 
-    def export(self, filename):
+    def get_data(self):
         df = pd.DataFrame()
         files = list()
 
@@ -806,6 +842,12 @@ class ImageROILoader():
                     df = df.append(s2)
 
         dfT = df.transpose(copy=True)
+
+        return dfT, files
+
+    def export(self, filename):
+
+        dfT, files = self.get_data()
 
         with open(f"{filename}.csv", 'w') as f:
             string = '# '
@@ -883,27 +925,42 @@ class StackROILoader():
 
                 show(p)
 
+    def get_data(self):
+        f = io.StringIO()
+        g = io.StringIO()
+        
+        for i, val in enumerate(self.data):
+            for k, v in val.items():
+                f.write("========================\n")
+                f.write(
+                    f"F~{self.filename[i]}_S{v.scan}_{v.caxis_labels[0]}_{v.caxis_labels[1]}\n")
+                f.write("========================\n")
+
+                g.write("========================\n")
+                g.write(
+                    f"F~{self.filename[i]}_S{v.scan}_{v.caxis_labels[0]}_{v.caxis_labels[1]}\n")
+                g.write("========================\n")
+
+                f.write("=== Scale x Gridded ===\n")
+                np.savetxt(f, v.mcp_x, fmt="%.9g")
+                f.write("=== Scale y Gridded ===\n")
+                np.savetxt(f, v.mcp_y, fmt="%.9g")
+                g.write("=== Image ===\n")
+                np.savetxt(g, v.imagemca, fmt="%.9g")
+
+        return f, g
+
     def export(self, filename):
-        with open(f"{filename}.txt_scale", "a") as f:
-            with open(f"{filename}.txt_matrix", "a") as g:
-                for i, val in enumerate(self.data):
-                    for k, v in val.items():
-                        f.write("========================\n")
-                        f.write(
-                            f"F~{self.filename[i]}_S{v.scan}_{v.caxis_labels[0]}_{v.caxis_labels[1]}\n")
-                        f.write("========================\n")
 
-                        g.write("========================\n")
-                        g.write(
-                            f"F~{self.filename[i]}_S{v.scan}_{v.caxis_labels[0]}_{v.caxis_labels[1]}\n")
-                        g.write("========================\n")
+        f, g, = self.get_data()
 
-                        f.write("=== Scale x Gridded ===\n")
-                        np.savetxt(f, v.mcp_x, fmt="%.9g")
-                        f.write("=== Scale y Gridded ===\n")
-                        np.savetxt(f, v.mcp_y, fmt="%.9g")
-                        g.write("=== Image ===\n")
-                        np.savetxt(g, v.imagemca, fmt="%.9g")
+        with open(f"{filename}.txt_scale", "a") as scales:
+            f.seek(0)
+            shutil.copyfileobj(f,scales)
+
+        with open(f"{filename}.txt_matrix", "a") as matrix:
+            g.seek(0)
+            shutil.copyfileobj(g,matrix)
 
         print(f"Successfully wrote Image data to {filename}.txt")
 
