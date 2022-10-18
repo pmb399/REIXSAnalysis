@@ -5,8 +5,13 @@ import h5py
 
 # Edge Dict
 from .edges import EdgeDict
+
+# Scan analysis utils
 from .rsxs_readutil import img_to_sca, grid_stack, stack_to_mca
 from . import rixs_readutil
+
+# Spec Config
+from .spec_config import get_REIXSconfig
 
 # Utilities
 import os
@@ -18,27 +23,29 @@ import warnings
 
 
 def REIXS(baseName, header_file):
+    REIXSconfig = get_REIXSconfig()
 
     if header_file.endswith(".h5"):
-        return REIXS_HDF5(baseName, header_file)
+        return REIXS_HDF5(baseName, header_file, REIXSconfig)
 
     elif header_file.endswith(".dat"):
-        return REIXS_ASCII(baseName, header_file)
+        return REIXS_ASCII(baseName, header_file, REIXSconfig)
 
     else:
         try:
-            return REIXS_HDF5(baseName, header_file)
+            return REIXS_HDF5(baseName, header_file, REIXSconfig)
         except:
-            return REIXS_ASCII(baseName, header_file)
+            return REIXS_ASCII(baseName, header_file, REIXSconfig)
 
-
+        
 class REIXS_HDF5(object):
 
-    def __init__(self, baseName, header_file):
+    def __init__(self, baseName, header_file, REIXSconfig):
         try:
             self.file = os.path.join(baseName, header_file)
         except:
             raise TypeError("You did not specify a directory path.")
+        self.REIXSconfig = REIXSconfig
 
     def Scan(self, scan):
         return self.myScan(self, scan)
@@ -49,27 +56,31 @@ class REIXS_HDF5(object):
             try:
                 with h5py.File(self.file, 'r') as f:
 
-                    # Create dictionary for scan numbers
-                    scanIndexDictHeader = dict()
-                    for k in f.keys():
-                        if k.startswith("SCAN_"):
-                            scanIndexDictHeader[int(k.split("_")[1])] = k
-                    my.scan = scanIndexDictHeader[scan]
+                    try:
+                        # Create dictionary for scan numbers
+                        scanIndexDictHeader = dict()
+                        for k in f.keys():
+                            if k.startswith("SCAN_"):
+                                scanIndexDictHeader[int(k.split("_")[1])] = k
+                        my.scan = scanIndexDictHeader[scan]
+
+                    except:
+                        raise KeyError("Scan not defined.")
 
                     try:
-                        my.mono_energy = np.array(f[f'{my.scan}/Data/beam'])
+                        my.mono_energy = np.array(f[f'{my.scan}/{self.REIXSconfig["HDF5_mono_energy"]}'])
                     except:
-                        raise TypeError("Problem detecting energy.")
+                        raise UserWarning("Problem detecting energy.")
 
                     try:
-                        my.mesh_current = np.array(f[f'{my.scan}/Data/i0'])
+                        my.mesh_current = np.array(f[f'{my.scan}/{self.REIXSconfig["HDF5_mesh_current"]}'])
                     except:
-                        raise TypeError("Problem detecting mesh current.")
+                        raise UserWarning("Problem detecting mesh current.")
 
                     try:
-                        my.sample_current = np.array(f[f'{my.scan}/Data/tey'])
+                        my.sample_current = np.array(f[f'{my.scan}/{self.REIXSconfig["HDF5_sample_current"]}'])
                     except:
-                        raise TypeError("Problem detecting sample current.")
+                        raise UserWarning("Problem detecting sample current.")
 
                     try:
                         my.TEY = my.sample_current/my.mesh_current
@@ -77,38 +88,38 @@ class REIXS_HDF5(object):
                         raise ValueError("Problem calculating TEY.")
 
                     try:
-                        my.sdd_data = np.array(f[f'{my.scan}/Data/sddMCA'])
+                        my.sdd_data = np.array(f[f'{my.scan}/{self.REIXSconfig["HDF5_sdd_data"]}'])
                         my.sdd_energy = np.array(
-                            f[f'{my.scan}/Data/sddMCA_scale'])
+                            f[f'{my.scan}/{self.REIXSconfig["HDF5_sdd_energy"]}'])
                     except:
                         warnings.warn("Could not load SDD data / SDD energy scale")
 
                     try:
-                        my.xeol_data = np.array(f[f'{my.scan}/Endstation/Detectors/XEOL/xeolMCA'])
-                        my.xeol_energy = np.array(f[f'{my.scan}/Endstation/Detectors/XEOL/xeolMCA_scale'])
-                        my.xeol_background = np.array(f[f'{my.scan}/Endstation/Detectors/XEOL/xeolMCA_back'])
+                        my.xeol_data = np.array(f[f'{my.scan}/{self.REIXSconfig["HDF5_xeol_data"]}'])
+                        my.xeol_energy = np.array(f[f'{my.scan}/{self.REIXSconfig["HDF5_xeol_energy"]}'])
+                        my.xeol_background = np.array(f[f'{my.scan}/{self.REIXSconfig["HDF5_xeol_background"]}'])
 
                     except:
                         warnings.warn("Could not load XEOL data / XEOL emission scale")
 
                     try:
                         my.mcp_data = np.transpose(
-                            np.array(f[f'{my.scan}/Data/mcpMCA']))
+                            np.array(f[f'{my.scan}/{self.REIXSconfig["HDF5_mcp_data"]}']))
                         my.mcp_energy = np.array(
-                            f[f'{my.scan}/Data/mcpMCA_scale'])
+                            f[f'{my.scan}/{self.REIXSconfig["HDF5_mcp_energy"]}'])
                     except:
                         warnings.warn("Could not load MCP data / MCP energy scale")
 
                     my.sca_data = pd.DataFrame()
                     try:
-                        for entry in f[f'{my.scan}/Endstation/Counters']:
+                        for entry in f[f'{my.scan}/{self.REIXSconfig["HDF5_sca_data"]}']:
                             my.sca_data[str(entry)] = np.array(
-                                f[f'{my.scan}/Endstation/Counters/{entry}'])
+                                f[f'{my.scan}/{self.REIXSconfig["HDF5_sca_data"]}/{entry}'])
                     except:
-                        raise UserWarning("Could not load SCAs from HDF5 container.")
+                        warnings.warn("Could not load SCAs from HDF5 container.")
 
             except:
-                raise ValueError("Scan not defined")
+                raise ValueError("Scan Data not defined")
 
         def MCP_norm(my):
             """Normalize the counts of the MCP by incident flux at every given datapoint.
@@ -194,7 +205,7 @@ class REIXS_ASCII(object):
 
     """Returns all scans in a scan file."""
 
-    def __init__(self, baseName, header_file):
+    def __init__(self, baseName, header_file, REIXSconfig):
         """
         Constructor for one data file.
 
@@ -219,6 +230,7 @@ class REIXS_ASCII(object):
             full_path_for_header_file = os.path.join(baseName, header_file)
         except:
             raise TypeError("You did not specify a directory path.")
+        self.REIXSconfig = REIXSconfig
 
         with open(full_path_for_header_file) as f:
             for line in f:
@@ -478,40 +490,52 @@ class REIXS_ASCII(object):
             my.sca_data = my.sca_data.apply(pd.to_numeric, errors='coerce')
 
             try:
-                my.mono_energy = np.array(my.sca_data["Mono_Engy"])
+                my.mono_energy = np.array(my.sca_data[self.REIXSconfig["ASCII_mono_energy"]])
             except:
+                ## We leave this in for legacy support
                 try:
-                    my.mono_energy = np.array(my.sca_data["Beam Engy"])
+                    my.mono_energy = np.array(my.sca_data["Mono_Engy"])
                 except:
                     try:
-                        my.mono_energy = np.array(my.sca_data["Mono Ener"])
+                        my.mono_energy = np.array(my.sca_data["Beam Engy"])
                     except:
                         try:
-                            my.mono_energy = np.array(my.sca_data["BeamEngy"])
+                            my.mono_energy = np.array(my.sca_data["Mono Ener"])
                         except:
-                            raise TypeError("Problem determining energy.")
+                            try:
+                                my.mono_energy = np.array(my.sca_data["BeamEngy"])
+                            except:
+                                raise TypeError("Problem determining energy.")
 
             try:
-                my.mesh_current = np.array(my.sca_data["Mesh"])
+                my.mesh_current = np.array(my.sca_data[self.REIXSconfig["ASCII_mesh_current"]])
             except:
+                ## Leave this in for legacy support
                 try:
-                    my.mesh_current = np.array(my.sca_data["Mesh Curr"])
+                    my.mesh_current = np.array(my.sca_data["Mesh"])
                 except:
                     try:
-                        my.mesh_current = np.array(my.sca_data["I0_BD3"])
+                        my.mesh_current = np.array(my.sca_data["Mesh Curr"])
                     except:
-                        raise TypeError("Problem determening mesh current")
+                        try:
+                            my.mesh_current = np.array(my.sca_data["I0_BD3"])
+                        except:
+                            raise TypeError("Problem determening mesh current")
 
             try:
-                my.sample_current = np.array(my.sca_data["Sample"])
+                my.sample_current = np.array(my.sca_data[self.REIXSconfig["ASCII_sample_current"]])
             except:
+                ## Also leave this in for legacy support
                 try:
-                    my.sample_current = np.array(my.sca_data["Samp Curr"])
+                    my.sample_current = np.array(my.sca_data["Sample"])
                 except:
                     try:
-                        my.sample_current = np.array(my.sca_data["TEY"])
+                        my.sample_current = np.array(my.sca_data["Samp Curr"])
                     except:
-                        raise TypeError("Problem determening sample current.")
+                        try:
+                            my.sample_current = np.array(my.sca_data["TEY"])
+                        except:
+                            raise TypeError("Problem determening sample current.")
 
             try:
                 my.TEY = my.sample_current/my.mesh_current
