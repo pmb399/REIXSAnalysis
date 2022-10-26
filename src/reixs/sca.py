@@ -10,9 +10,9 @@ from .parser import math_stream
 
 def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, energyloss=None, grid_x=[None, None, None], savgol=None, binsize=None):
     special_streams = ['TEY', 'TFY', 'PFY', 'iPFY', 'XES', 'rXES', 'specPFY',
-                       'XRF', 'rXRF', 'XEOL', 'rXEOL', 'POY', 'TOY', 'EY', 'Sample', 'Mesh']  # all special inputs
+                       'XRF', 'rXRF', 'XEOL', 'rXEOL', 'POY', 'TOY', 'EY', 'Sample', 'Mesh', 'ET']  # all special inputs
     XAS_streams = ['TEY', 'TFY', 'PFY', 'iPFY', 'specPFY', 'POY',
-                   'TOY', 'rXES', 'rXRF', 'rXEOL']  # All that are normalized to mesh
+                   'TOY', 'rXES', 'rXRF', 'rXEOL', 'ET']  # All that are normalized to mesh
 
     # Note that the data dict only gets populated locally until the appropriate
     # singular y stream is return -- Assignment of y_stream happens after evaluation
@@ -88,6 +88,31 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
 
                 return poy_spec(data, arg, REIXSobj, roi_low, roi_high, background_scan=background)
 
+            if doesMatchPattern(y_stream, ['ET']):
+                roi = y_stream.lstrip("ET[").rstrip("]")
+                roi_low, roi_high = get_roi(roi)
+
+                from .LoadData import EEMsLoader
+                import pandas as pd
+                import io
+
+                eems = EEMsLoader()
+                eems.load(basedir, file, 'MCP', arg, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background, grid_x=grid_x,energyloss=True)
+                f,g = eems.get_data()
+
+                df = pd.read_csv(io.StringIO(f.getvalue()),skiprows=3,delimiter=",")
+                x_data = np.array(df["Motor Scale Gridded"].dropna())
+                matrix = np.loadtxt(io.StringIO(g.getvalue()),skiprows=4)
+                energy_transfer = np.array(df['Detector Scale Gridded'].dropna())
+                
+                idx_min = np.abs(roi_low-energy_transfer).argmin()
+                idx_max = np.abs(roi_high-energy_transfer).argmin()
+
+                y_data = np.sum(matrix[:,idx_min:idx_max],axis=1)
+                data[arg].mono_energy_gridded = x_data
+
+                return y_data
+
             elif y_stream == 'EY':
                 return data[arg].sample_current
 
@@ -121,7 +146,10 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
 
     def get_x_data(x_stream, data, arg, background, REIXSObj):
         if x_stream == "Mono Energy":
-            return data[arg].mono_energy
+            if y_stream.startswith("ET"):
+                return data[arg].mono_energy_gridded
+            else:
+                return data[arg].mono_energy
 
         elif x_stream == "MCP Energy":
             return data[arg].mcp_energy
