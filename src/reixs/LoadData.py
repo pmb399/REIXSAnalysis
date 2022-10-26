@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d, interp2d
 
+# Plotting
 from bokeh.io import push_notebook
 from bokeh.plotting import show, figure
 from bokeh.models import ColumnDataSource, HoverTool, LinearColorMapper, ColorBar, Span, Label
@@ -21,6 +22,7 @@ from ipyfilechooser import FileChooser
 # Edge Dict
 from .edges import EdgeDict
 
+# Data Processing Functions
 from .util import COLORP, all_list_entries_equal
 from .xeol import *
 from .add_subtract import ScanAddition, ScanSubtraction
@@ -34,6 +36,7 @@ from .rsxs_mcp import loadRSXS1dROIscans, loadRSXS2dROIscans, loadRSXSImageStack
 
 
 class Load1d:
+    """Class to load generic 1d (x,y) data."""
     def __init__(self):
         self.data = list()
         self.type = list()
@@ -47,51 +50,198 @@ class Load1d:
         self.plot_labels = list()
 
     def load(self, basedir, file, x_stream, y_stream, *args, **kwargs):
+        """
+        Load one or multiple specific scan(s) for selected streams.
+
+        Parameters
+        ----------
+        basedir : string
+            Specifiy the absolute or relative path to experimental data.
+        file : string
+            Specify the file name (either ASCII or HDF5).
+        x_stream : string
+            Specifiy the data for the horizontal axis.
+            Use: "Mono Energy", "MCP Energy", "SDD Energy", "XEOL Energy", "Points", or any SCA scalar array.
+        y_stream : string
+            Specifiy the data for the vertical axis.
+            Use: "TEY", "TFY, "PFY", "iPFY", "XES", "rXES", "specPFY",
+                  "XRF", "rXRF", "XEOL", "rXEOL", "POY", "TOY", "EY", "Sample", "Mesh", "ET", or any SCA scalar array.
+        *args : int
+            Separate scan numbers with comma.
+        **kwargs: multiple, optional
+            Options:
+                norm : boolean
+                    Norm the spectra to [0,1].
+                    default: True
+                xoffset : list of tuples
+                    Offset the x-axis by applying a polynomial fit.
+                    default: None
+                xcoffset : float
+                    Offset x-axis by constant value.
+                    default : None 
+                yoffset : list of tuples
+                    Offset the y-axis by applying a polynomial fit.
+                    default : None 
+                ycoffset : float
+                    Offset y-axis by constant value.
+                    default : None
+                background : int or boolean
+                    Apply background selection for XEOL. 
+                    Select True when using with getXEOLback function or select background scan number.
+                    default : None
+                energyloss : boolean or float
+                    Convert emission energy to energy loss.
+                    Select True to extract incident mono energy from file or specify float manually.
+                    default : None
+                grid_x: list
+                    Grid data evenly on specified grid [low,high,step size]
+                    default: [None, None, None]
+                savgol : tupel
+                    Apply a Savitzky-Golay filter for smoothing, and optionally take derivatives.
+                    arg1 : savgol window length
+                    arg2 : savgol polynomial order
+                    arg 3: derivative order, optional
+                    default : None, 
+                binsize : int
+                    Bin data by reducing data points via averaging.
+                    Int must be exponent of 2.
+                    default : None
+        """
+
+        # Set the defaults if not specified in **kwargs.
         kwargs.setdefault("norm",True)
         kwargs.setdefault("is_XAS",False)
+        # Append all REIXS scan objects to scan list in current object.
         self.data.append(loadSCAscans(basedir, file, x_stream, y_stream, *args, **kwargs))
         self.type.append(y_stream)
         self.x_stream.append(x_stream)
         self.filename.append(file)
 
-    def add(self, basedir, file, x_stream, y_stream, *args, **kwargs):
+    def add(self, basedir, file, x_stream, y_stream, *args, **kwargs):       
+        """
+        Add specified scans for selected streams.
+
+        Parameters
+        ----------
+        See loader function.
+        Adds all scans specified in *args.
+        """
+
+        # Set the defaults if not specified in **kwargs.
         kwargs.setdefault("norm",False)
         kwargs.setdefault("avg",False)
         kwargs.setdefault("is_XAS",False)
+        # Append all REIXS scan objects to scan list in current object.
         self.data.append(ScanAddition(basedir, file, x_stream, y_stream, *args, **kwargs))
         self.x_stream.append(x_stream)
         self.type.append(y_stream)
         self.filename.append(file)
 
     def subtract(self, basedir, file, x_stream, y_stream, *args, **kwargs):
+        """
+        Subtract specified scans for selected streams.
+
+        Parameters
+        ----------
+        See loader function.
+        Subtracts all scans from the first element. May add scans in first element by specifying list of scans as first *arg.
+
+        """
+        # Set the defaults if not specified in **kwargs.
         kwargs.setdefault("norm",False)
         kwargs.setdefault("is_XAS",False)
+        # Append all REIXS scan objects to scan list in current object.
         self.data.append(ScanSubtraction(basedir, file, x_stream, y_stream, *args, **kwargs))
         self.x_stream.append(x_stream)
         self.type.append(y_stream)
         self.filename.append(file)
 
     def xlim(self,lower,upper):
+        """
+        Set x-axis plot window limits.
+
+        Parameters
+        ----------
+        lower : float
+        upper : float
+        """
         self.plot_lim_x[0] = lower
         self.plot_lim_x[1] = upper
 
     def ylim(self,lower,upper):
+        """
+        Set y-axis plot window limits.
+
+        Parameters
+        ----------
+        lower : float
+        upper : float
+        """
         self.plot_lim_y[0] = lower
         self.plot_lim_y[1] = upper
 
     def plot_legend(self,pos):
+         """
+        Overwrite default legend position.
+
+        Parameters
+        ----------
+        pos : string
+            See bokeh manual for available options.
+        """
         self.legend_loc = pos
 
     def vline(self,pos,**kwargs):
+         """
+        Draw a vertical line in the plot.
+
+        Parameters
+        ----------
+        pos : float
+        **kwargs : dict, optional
+            See bokeh manual for available options.
+        """
         self.plot_vlines.append([pos,kwargs])
     
     def hline(self,pos,**kwargs):
+         """
+        Draw a horizontal line in the plot.
+
+        Parameters
+        ----------
+        pos : float
+        **kwargs : dict, optional
+            See bokeh manual for available options.
+        """
         self.plot_hlines.append([pos,kwargs])
 
     def label(self,pos_x,pos_y,text,**kwargs):
+         """
+        Draw a text box in the plot.
+
+        Parameters
+        ----------
+        pos_x : float
+        pos_y : float
+        text : string
+        **kwargs : dict, optional
+            See bokeh manual for available options.
+        """
         self.plot_labels.append([pos_x,pos_y,text,kwargs])
 
     def plot(self, linewidth=4, title=None, xlabel=None, ylabel=None):
+         """
+        Plot all data assosciated with class instance/object.
+
+        Parameters
+        ----------
+        linewidth : int, optional
+        title : string, optional
+        xlabel : string, optional
+        ylabel : string, optional
+        """
+
+        # Organize all data assosciated with object in sorted dictionary.
         plot_data = defaultdict(list)
         for i, val in enumerate(self.data):
             for k, v in val.items():
@@ -103,11 +253,13 @@ class Load1d:
                 plot_data['scan'].append(v.scan)
                 plot_data['legend'].append(f"S{v.scan}_{self.type[i]}")
 
+        # Get the colours for the glyphs.
         numlines = len(plot_data['scan'])
         plot_data['color'] = COLORP[0:numlines]
 
         source = ColumnDataSource(plot_data)
 
+        # Set up the bokeh plot
         p = figure(plot_height=450,plot_width=700,
                    tools="pan,wheel_zoom,box_zoom,reset,crosshair,save")
         p.multi_line(xs='x_stream', ys='y_stream', legend_group="legend",
@@ -115,6 +267,7 @@ class Load1d:
                      hover_line_color='color', hover_line_alpha=1.0,
                      source=source)
 
+        # Set up the information for hover box
         p.add_tools(HoverTool(show_arrow=False, line_policy='next', tooltips=[
             ('Scan', '@scan'),
             ('File', '@filename'),
@@ -124,6 +277,7 @@ class Load1d:
 
         p.toolbar.logo = None
 
+        # Overwrite plot properties if requested.
         if self.legend_loc == 'outside':
             p.add_layout(p.legend[0], 'right')
         else:
@@ -163,11 +317,21 @@ class Load1d:
         show(p)
 
     def get_data(self):
+        """Make data available in memory as exported to file.
 
+        Returns
+        -------
+        dfT : pandas DataFrame 
+            All loaded data.
+        files : list
+            List of all loaded files.
+        """
         df = pd.DataFrame()
         files = list()
 
+        # Iterate over all "load" calls
         for i, val in enumerate(self.data):
+            # Iterate over all scans per load call.
             for k, v in val.items():
                 name = f"~{self.filename[i]}"
                 if name not in files:
@@ -186,21 +350,30 @@ class Load1d:
         return dfT, files
 
     def export(self, filename):
+        """
+        Export and write data to specified file.
 
+        Parameters
+        ----------
+        filename : string
+        """
         dfT, files = self.get_data()
 
+        # Open file.
         with open(f"{filename}.csv", 'w') as f:
             string = '# '
+            # Generate list of files for legend.
             for idx, file in enumerate(files):
                 string += f"F{idx+1} {file},"
             string += '\n'
             f.write(string)
+            # Write pandas dataframe to file.
             dfT.to_csv(f, index=False, line_terminator='\n')
 
-        # dfT.to_csv(f"{filename}.csv",index=False)
         print(f"Successfully wrote DataFrame to {filename}.csv")
 
     def exporter(self):
+        """Interactive exporter widget."""
         current_dir = os.path.dirname(os.path.realpath("__file__"))
 
         self.exportfile = FileChooser(current_dir)
@@ -219,11 +392,12 @@ class Load1d:
         display(self.exportfile, button)
 
     def exportWidgetStep(self, my):
+        # Helper function for exporter widget.
         file = os.path.join(self.exportfile.selected_path,
                             self.exportfile.selected_filename)
         self.export(file)
 
-
+## The following classes all inherit from Load1d and provide quick-access to frequently used spectroscopy.
 class XASLoader(Load1d):
     def load(self, basedir, file, y_stream, *args, **kwargs):
         x_stream = 'Mono Energy'
@@ -329,7 +503,7 @@ class XEOLLoader(Load1d):
 #########################################################################################
 
 class Load2d:
-    """Plots the 2D image of a given detector"""
+    """Class to load generic 2d (x,y, z) image data of a detector."""
 
     def __init__(self):
         self.data = list()
@@ -348,6 +522,58 @@ class Load2d:
 
 
     def load(self, basedir, file, x_stream, y_stream, detector, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, grid_x=[None, None, None], grid_y=[None, None, None]):
+         """
+        Load one or multiple specific scan(s) for selected streams.
+
+        Parameters
+        ----------
+        basedir : string
+            Specifiy the absolute or relative path to experimental data.
+        file : string
+            Specify the file name (either ASCII or HDF5).
+        x_stream : string
+            Specifiy the data for the horizontal axis.
+            Use: "Mono Energy" or any SCA scalar array.
+        y_stream : string
+            Specifiy the data for the vertical axis.
+            Use: "MCP Energy", "SDD Energy", "XEOL Energy"
+        detector : string
+            Use: "MCP", "SDD", or "XEOL".
+        *args : int
+            Specify one (1) scan to load.
+        **kwargs: multiple, optional
+            Options:
+                norm : boolean
+                    Norm the spectra to [0,1].
+                    default: True
+                xoffset : list of tuples
+                    Offset the x-axis by applying a polynomial fit.
+                    default: None
+                xcoffset : float
+                    Offset x-axis by constant value.
+                    default : None 
+                yoffset : list of tuples
+                    Offset the y-axis by applying a polynomial fit.
+                    default : None 
+                ycoffset : float
+                    Offset y-axis by constant value.
+                    default : None
+                background : int or boolean
+                    Apply background selection for XEOL. 
+                    Select True when using with getXEOLback function or select background scan number.
+                    default : None
+                energyloss : boolean or float
+                    Convert emission energy to energy loss.
+                    Select True to extract incident mono energy from file or specify float manually.
+                    default : None
+                grid_x: list
+                    Grid data evenly on specified grid [low,high,step size]
+                    default: [None, None, None]
+                grid_y: list
+                    Grid data evenly on specified grid [low,high,step size]
+                    default: [None, None, None]
+        """
+        # Ensure that only one scan is loaded.
         if len(args) != 1:
             raise TypeError("You may only select one scan at a time")
         if self.data != []:
@@ -363,31 +589,80 @@ class Load2d:
         self.grid_y.append(grid_y)
 
     def xlim(self,lower,upper):
+        """
+        Set x-axis plot window limits.
+
+        Parameters
+        ----------
+        lower : float
+        upper : float
+        """
         self.plot_lim_x[0] = lower
         self.plot_lim_x[1] = upper
 
     def ylim(self,lower,upper):
+        """
+        Set y-axis plot window limits.
+
+        Parameters
+        ----------
+        lower : float
+        upper : float
+        """
         self.plot_lim_y[0] = lower
         self.plot_lim_y[1] = upper
 
     def vline(self,pos,**kwargs):
+         """
+        Draw a vertical line in the plot.
+
+        Parameters
+        ----------
+        pos : float
+        **kwargs : dict, optional
+            See bokeh manual for available options.
+        """
         self.plot_vlines.append([pos,kwargs])
     
     def hline(self,pos,**kwargs):
+         """
+        Draw a horizontal line in the plot.
+
+        Parameters
+        ----------
+        pos : float
+        **kwargs : dict, optional
+            See bokeh manual for available options.
+        """
         self.plot_hlines.append([pos,kwargs])
 
     def label(self,pos_x,pos_y,text,**kwargs):
+         """
+        Draw a text box in the plot.
+
+        Parameters
+        ----------
+        pos_x : float
+        pos_y : float
+        text : string
+        **kwargs : dict, optional
+            See bokeh manual for available options.
+        """
         self.plot_labels.append([pos_x,pos_y,text,kwargs])
 
     def plot(self):
+         """Plot all data assosciated with class instance/object."""
 
+        # Iterate over the one (1) scan in object - this is for legacy reason and shall be removed in the future.
         for i, val in enumerate(self.data):
             for k, v in val.items():
 
+                # Create the figure
                 p = figure(tooltips=[("x", "$x"), ("y", "$y"), ("value", "@image")],
                            tools="pan,wheel_zoom,box_zoom,reset,hover,crosshair,save")
                 p.x_range.range_padding = p.y_range.range_padding = 0
 
+                # Grid the data evenly to generate image (not scatter plot)
                 xmin, xmax, ymin, ymax, new_x, new_y, new_z = self.grid_data(
                     v, i)
 
@@ -396,6 +671,7 @@ class Load2d:
                                                  low=v.detector.min(),
                                                  high=v.detector.max())
 
+                # Plot image and use limits as given by even grid.
                 p.image(image=[new_z], x=xmin, y=ymin, dw=xmax-xmin,
                         dh=ymax-ymin, color_mapper=color_mapper, level="image")
                 p.grid.grid_line_width = 0.5
@@ -407,6 +683,7 @@ class Load2d:
                                      title='Counts')
                 p.add_layout(color_bar, 'right')
 
+                # Overwrite plot properties if selected.
                 if self.plot_lim_y[0] != ':':
                     p.y_range.start = self.plot_lim_y[0]
                 if self.plot_lim_y[1] != ':':
@@ -440,8 +717,10 @@ class Load2d:
                 show(p)
 
     def grid_data(self, v, i):
+        """Internal function to apply specified grid or ensure otherwise that axes are evenly spaced as this is required to plot an image."""
 
         # Do auto-grid if not specified otherwise
+        # Take step-size as smallest delta observed in data array
         if self.grid_x[i] == [None, None, None]:
             xmin = v.x_data.min()
             xmax = v.x_data.max()
@@ -453,6 +732,7 @@ class Load2d:
             xmax = self.grid_x[i][1]
             x_points = int(np.ceil((xmax-xmin)/self.grid_x[i][2])) + 1
 
+        # Same as above, now for second axis.
         if self.grid_y[i] == [None, None, None]:
             ymin = v.y_data.min()
             ymax = v.y_data.max()
@@ -464,32 +744,52 @@ class Load2d:
             ymax = self.grid_y[i][1]
             y_points = int(np.ceil((ymax-ymin)/self.grid_y[i][2])) + 1
 
+        # Interpolate the data with given grid
         f = interp2d(v.x_data, v.y_data, v.detector)
 
         new_x = np.linspace(xmin, xmax, x_points, endpoint=True)
         new_y = np.linspace(ymin, ymax, y_points, endpoint=True)
+        # Interpolate image on evenly-spaced grid
         new_z = f(new_x, new_y)
 
         return xmin, xmax, ymin, ymax, new_x, new_y, new_z
 
     def get_data(self):
+        """Make data available in memory as exported to file.
+
+        Returns
+        -------
+        f : string.IO object
+            Motor and Detector Scales. Pandas Data Series.
+            1) Rewind memory with f.seek(0)
+            2) Load with pandas.from_csv(object)
+        g : string.IO object
+            Actual gridded detector image.
+            1) Rewind memory with g.seek(0)
+            2) Load with numpy.genfromtxt(object)
+        """
+        # Set up the data frame and the two string objects for export
         df = pd.DataFrame()
         f = io.StringIO()
         g = io.StringIO()
         for i, val in enumerate(self.data):
             for k, v in val.items():
+                # Generate the gridded scales for f.
                 xmin, xmax, ymin, ymax, new_x, new_y, new_z = self.grid_data(
                     v, i)
+                # Start writing string f
                 f.write("========================\n")
                 f.write(
                     f"F~{self.filename[i]}_S{v.scan}_{self.detector[i]}_{self.x_stream[i]}_{self.y_stream[i]}\n")
                 f.write("========================\n")
-
+                
+                # Start writing string g
                 g.write("========================\n")
                 g.write(
                     f"F~{self.filename[i]}_S{v.scan}_{self.detector[i]}_{self.x_stream[i]}_{self.y_stream[i]}\n")
                 g.write("========================\n")
 
+                # Append data to string now.
                 s1 = pd.Series(
                     new_x, name="Motor Scale Gridded")
                 df = df.append(s1)
@@ -505,9 +805,18 @@ class Load2d:
             return f, g
 
     def export(self, filename):
+        """
+        Export and write data to specified file.
 
+        Parameters
+        ----------
+        filename : string
+        """
         f, g, = self.get_data()
 
+        # Dump both strings in file.
+        # Need to rewind memory location of String.IO to move to beginning.
+        # Copy string content to file with shutil.
         with open(f"{filename}.txt_scale", "a") as scales:
             f.seek(0)
             shutil.copyfileobj(f,scales)
@@ -519,6 +828,7 @@ class Load2d:
         print(f"Successfully wrote Image data to {filename}.txt")
 
     def exporter(self):
+        """Interactive exporter widget."""
         current_dir = os.path.dirname(os.path.realpath("__file__"))
 
         self.exportfile = FileChooser(current_dir)
@@ -537,12 +847,14 @@ class Load2d:
         display(self.exportfile, button)
 
     def exportWidgetStep(self, my):
+        # Helper function for exporter widget
         file = os.path.join(self.exportfile.selected_path,
                             self.exportfile.selected_filename)
         self.export(file)
 
 
 class EEMsLoader(Load2d):
+    """Specific 2d loader for excitation-emission-maps."""
     def __init__(self):
         self.energyloss = list()
         super().__init__()
@@ -559,12 +871,14 @@ class EEMsLoader(Load2d):
         else:
             raise TypeError("Detector not defined.")
 
+        # May select to plot 2d EEMs image on energy loss scale.
         self.energyloss.append(energyloss)
 
         super().load(basedir, file, x_stream, y_stream, detector, *args, norm=norm, xoffset=xoffset,
                      xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background, grid_x=grid_x, grid_y=grid_y)
 
     def grid_data(self, v, i):
+        # Same as for the generic case if energyloss is not selected.
         if self.energyloss[i] == False:
             return super().grid_data(v, i)
         
@@ -582,9 +896,11 @@ class EEMsLoader(Load2d):
 
             energy_loss_axes = list()
 
+            # Calculate the energy loss axis for each mono energy as the incident energy will change the axis.
             for monoE in v.x_data:
                 energy_loss_axes.append(monoE-v.y_data)
 
+            # Determine the widest range where data is available on the rotated image.
             if self.grid_x[i] == [None,None,None]:
                 ymin = energy_loss_axes[-1][-1]
                 ymax = energy_loss_axes[0][0]
@@ -595,11 +911,13 @@ class EEMsLoader(Load2d):
                 ymax = self.grid_x[i][1]
                 y_points = int(np.ceil((ymax-ymin)/self.grid_x[i][2])) + 1
 
+            # Generate new axis as per the rotated image above.
             new_x = np.linspace(xmin, xmax, x_points, endpoint=True)
             new_y = np.linspace(ymin, ymax, y_points, endpoint=True)
 
             scatter_z = np.zeros((len(v.x_data),len(new_y)))
 
+            # Evaluate the detector image on the new common energy axis
             for idx,val in enumerate(np.transpose(v.detector)):
                 scatter_z[idx,:] = interp1d(energy_loss_axes[idx],val)(new_y)
 
@@ -619,7 +937,7 @@ class EEMsLoader(Load2d):
 
 
 class LoadMesh:
-    """Plots the Mesh Scan images"""
+    """Class to display (x,y,z) scatter data."""
 
     def __init__(self):
         self.data = list()
