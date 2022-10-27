@@ -181,7 +181,7 @@ class Load1d:
         self.plot_lim_y[1] = upper
 
     def plot_legend(self,pos):
-         """
+        """
         Overwrite default legend position.
 
         Parameters
@@ -192,7 +192,7 @@ class Load1d:
         self.legend_loc = pos
 
     def vline(self,pos,**kwargs):
-         """
+        """
         Draw a vertical line in the plot.
 
         Parameters
@@ -204,7 +204,7 @@ class Load1d:
         self.plot_vlines.append([pos,kwargs])
     
     def hline(self,pos,**kwargs):
-         """
+        """
         Draw a horizontal line in the plot.
 
         Parameters
@@ -216,7 +216,7 @@ class Load1d:
         self.plot_hlines.append([pos,kwargs])
 
     def label(self,pos_x,pos_y,text,**kwargs):
-         """
+        """
         Draw a text box in the plot.
 
         Parameters
@@ -230,7 +230,7 @@ class Load1d:
         self.plot_labels.append([pos_x,pos_y,text,kwargs])
 
     def plot(self, linewidth=4, title=None, xlabel=None, ylabel=None):
-         """
+        """
         Plot all data assosciated with class instance/object.
 
         Parameters
@@ -522,7 +522,7 @@ class Load2d:
 
 
     def load(self, basedir, file, x_stream, y_stream, detector, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, grid_x=[None, None, None], grid_y=[None, None, None]):
-         """
+        """
         Load one or multiple specific scan(s) for selected streams.
 
         Parameters
@@ -613,7 +613,7 @@ class Load2d:
         self.plot_lim_y[1] = upper
 
     def vline(self,pos,**kwargs):
-         """
+        """
         Draw a vertical line in the plot.
 
         Parameters
@@ -625,7 +625,7 @@ class Load2d:
         self.plot_vlines.append([pos,kwargs])
     
     def hline(self,pos,**kwargs):
-         """
+        """
         Draw a horizontal line in the plot.
 
         Parameters
@@ -637,7 +637,7 @@ class Load2d:
         self.plot_hlines.append([pos,kwargs])
 
     def label(self,pos_x,pos_y,text,**kwargs):
-         """
+        """
         Draw a text box in the plot.
 
         Parameters
@@ -651,7 +651,7 @@ class Load2d:
         self.plot_labels.append([pos_x,pos_y,text,kwargs])
 
     def plot(self):
-         """Plot all data assosciated with class instance/object."""
+        """Plot all data assosciated with class instance/object."""
 
         # Iterate over the one (1) scan in object - this is for legacy reason and shall be removed in the future.
         for i, val in enumerate(self.data):
