@@ -7,11 +7,13 @@ from collections.abc import MutableMapping
 
 #########################################################################################
 def all_list_entries_equal(iterable):
+    """Checks if all entries in a list are equal"""
     g = groupby(iterable)
     return next(g, True) and not next(g, False)
 
 #########################################################################################
 def doesMatchPattern(string, patterns=[]):
+    """Checks if a string matches specific patterns"""
     for p in patterns:
 
         # skip empty patterns
@@ -24,6 +26,7 @@ def doesMatchPattern(string, patterns=[]):
 
 #########################################################################################
 def get_roi(roi):
+    """Gets the roi when ':' separated"""
     try:
         roi_low = float(roi.split(":")[0])
         roi_high = float(roi.split(":")[1])
@@ -35,6 +38,7 @@ def get_roi(roi):
 
 #########################################################################################
 def check_idx(idx_low,idx_high):
+    """Check the index of an array. Add +1 to allow slicing."""
     if idx_low == idx_high:
         idx_high = idx_low+1
     
@@ -42,12 +46,14 @@ def check_idx(idx_low,idx_high):
 
 #########################################################################################
 def check_key_in_dict(key,dic):
+    """Checks if a specific key is ina dictionary"""
     for k,v in dic.items():
         if key == k:
             return True
 
 #########################################################################################
 def flatten(d):
+    """Flattens a dictionary of dicts to one dictionary"""
     items = []
     for k, v in d.items():
         if isinstance(v, MutableMapping):
@@ -70,26 +76,42 @@ COLORP = ['#d60000', '#8c3bff', '#018700', '#00acc6', '#e6a500', '#ff7ed1', '#6b
 #########################################################################################
 
 def to_quanty(file):
+    """Manipulates data file such that it can be used as input for Quanty Fitting program.
+    
+    Parameters
+    ----------
+    file : string
+        Specify path to exported file.
+    
+    """
+    # Read the data file
+
     df = pd.read_csv(file,header=1)
     minimum = list()
     maximum = list()
     diff = list()
     interpObj = list()
+    # Start interpolation process to common energy loss axis
     for i,name in enumerate(df.columns):
         if name.endswith('MCP Energy'):
             minimum.append(df[name].min())
             maximum.append(df[name].max())
             diff.append(np.diff(df[name]).min())
-            
+            # Interpolate all data
             interpObj.append(interp1d(np.array(df[name]),np.array(df.iloc[:,df.columns.get_loc(name)+1]),fill_value='extrapolate'))
 
+    # Calculate the number of points and generate linear space
     numPoints = int(np.ceil((np.array(maximum).max() - np.array(minimum).min())/abs(np.array(diff).min())))
     linspace = np.linspace(np.array(minimum).min(),np.array(maximum).max(),numPoints,endpoint=True)
 
+    # Create new pandas data frame
     dfint = pd.DataFrame(linspace)
 
+    # Evaluate all interp objects on new lin space
+    # and append to new data frame
     for i,obj in enumerate(interpObj):
         dfint[i+1] = obj(linspace)
 
+    # Convert data frame to numpy and export
     npreturn = dfint.to_numpy()
     np.savetxt(f"{file}_Quanty.txt",npreturn)

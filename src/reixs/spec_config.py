@@ -2,10 +2,23 @@ import os
 import ast
 
 def get_REIXSconfig():
+    """Allows to read in an external spec config, otherwise default to internal value below
+    
+        Instructions
+        ------------
+        0) Import os
+        1) Set up a REIXSconfig dictionary
+            REIXSconfig = dict() 
+        2) Append all python variables as keys into dict with value as the spec variabe
+            REIXSconfig["python_variable"] = "spec variable"
+        3) Export the REIXSconfig dict to environment
+            os.environ["REIXSconfig"] = str(REIXSconfig)
+    """
+    # Read in external configuration if available
     if "REIXSconfig" in os.environ:
         # Expects environmental variable as string - need to convert to dict
         return ast.literal_eval(os.environ["REIXSconfig"])
-    else:
+    else: # default to internal values
         REIXSconfig = dict()
         REIXSconfig["HDF5_mono_energy"] = "Data/beam"
         REIXSconfig["HDF5_mesh_current"] = "Data/i0"

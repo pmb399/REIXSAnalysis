@@ -155,4 +155,5 @@ def specPFY(mcp_energy, mcp_data_norm, mcp_lowE, mcp_highE):
     return mcp_data_norm[:, mcp_lowE_idx:mcp_highE_idx].sum(axis=1)
 
 def detector_norm(detector_mca,mesh_current):
+    """Normalize the detector data by mesh current."""
     return np.true_divide(detector_mca,mesh_current)

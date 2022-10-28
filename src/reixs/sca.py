@@ -9,6 +9,14 @@ from .parser import math_stream
 
 
 def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, energyloss=None, grid_x=[None, None, None], savgol=None, binsize=None):
+    """Internal function to load MCA data
+    
+        Parameters
+        ----------
+        See Load1d function.
+    """
+
+    # Define special streams that are calculated internally
     special_streams = ['TEY', 'TFY', 'PFY', 'iPFY', 'XES', 'rXES', 'specPFY',
                        'XRF', 'rXRF', 'XEOL', 'rXEOL', 'POY', 'TOY', 'EY', 'Sample', 'Mesh', 'ET']  # all special inputs
     XAS_streams = ['TEY', 'TFY', 'PFY', 'iPFY', 'specPFY', 'POY',
@@ -19,6 +27,8 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
     # of mathemtatical expression
 
     def get_y_data(y_stream, data, arg, background, REIXSObj):
+        # Get the y-data stream
+        # Check if the requested stream is a special stream
         if doesMatchPattern(y_stream, special_streams):
             # CAUTION: Order matters as doesmatchpattern also returns TRUE if pattern in instance
             # is recogniced --> shortest pattern to check last
@@ -89,30 +99,39 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
                 return poy_spec(data, arg, REIXSobj, roi_low, roi_high, background_scan=background)
 
             if doesMatchPattern(y_stream, ['ET']):
+                # This is to integrate over an energy transfer region
                 roi = y_stream.lstrip("ET[").rstrip("]")
                 roi_low, roi_high = get_roi(roi)
 
+                # Utilize 2d EEMs to convert excitation emission map to energy loss scale
                 from .LoadData import EEMsLoader
                 import pandas as pd
                 import io
 
+                # Load the corresponding 2d EEMs image
                 eems = EEMsLoader()
                 eems.load(basedir, file, 'MCP', arg, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background, grid_x=grid_x,energyloss=True)
-                f,g = eems.get_data()
+                f,g = eems.get_data() # Extract the eems data and store in memory
 
+                # Read in the StrinIO variables from eems.get_data
+                # Need to get their values and transform to StringIO again for pandas to read
                 df = pd.read_csv(io.StringIO(f.getvalue()),skiprows=3,delimiter=",")
+                # Assign the data to variables
                 x_data = np.array(df["Motor Scale Gridded"].dropna())
                 matrix = np.loadtxt(io.StringIO(g.getvalue()),skiprows=4)
                 energy_transfer = np.array(df['Detector Scale Gridded'].dropna())
                 
+                # Set ROI
                 idx_min = np.abs(roi_low-energy_transfer).argmin()
                 idx_max = np.abs(roi_high-energy_transfer).argmin()
 
                 y_data = np.sum(matrix[:,idx_min:idx_max],axis=1)
+                # Store the corresponding new mono energy scale (gridded for even image spacing in eems 2d)
                 data[arg].mono_energy_gridded = x_data
 
                 return y_data
 
+            # Legacy for RSXS use
             elif y_stream == 'EY':
                 return data[arg].sample_current
 
@@ -130,6 +149,7 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
 
             else:
                 try:
+                    # Else, load from pandas SCA data frame
                     return get_sca_data(y_stream, data, arg)
 
                 except:
@@ -139,11 +159,13 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
             return get_sca_data(y_stream, data, arg)
 
     def get_sca_data(stream, data, arg):
+        # Trys loading SCAs with key from spec longname or spec mnemonic
         try:
             return np.array(data[arg].sca_data[stream])
         except:
             return np.array(data[arg].sca_data[data[arg].mnemonic2name[stream]])
 
+    # Load the x data stream
     def get_x_data(x_stream, data, arg, background, REIXSObj):
         if x_stream == "Mono Energy":
             if y_stream.startswith("ET"):
@@ -160,14 +182,17 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
         elif x_stream == "XEOL Energy":
             return data[arg].xeol_energy
 
+        # May also plot agains index
         elif x_stream == "Points":
             return np.array(range(0, len(data[arg].y_stream)), dtype=int)
 
         else:
             return get_sca_data(x_stream, data, arg)
 
+    # Add all data (REIXS objects) to dictionary
     data = dict()
     REIXSobj = REIXS(basedir, file)
+    # Iterate over all scans requested in load call
     for arg in args:
         data[arg] = REIXSobj.Scan(arg)
 
@@ -190,23 +215,26 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
             data[arg].x_stream = new_x
             data[arg].y_stream = new_y
 
-        # Apply offsets and normalize
+        # Apply offsets to x-stream
         data[arg].x_stream = apply_offset(
             data[arg].x_stream, xoffset, xcoffset)
 
+        # Apply normalization to [0,1]
         if norm == True:
             data[arg].y_stream = np.interp(
                 data[arg].y_stream, (data[arg].y_stream.min(), data[arg].y_stream.max()), (0, 1))
 
+        # Apply offset to y-stream
         data[arg].y_stream = apply_offset(
             data[arg].y_stream, yoffset, ycoffset)
                
+        # Smooth and take derivatives
         if savgol != None:
             if isinstance(savgol,tuple):
-                if len(savgol) == 2:
-                    savgol_deriv = 0
+                if len(savgol) == 2: # Need to provide window length and polynomial order
+                    savgol_deriv = 0 # Then, no derivative is taken
                 elif len(savgol) == 3:
-                    savgol_deriv = savgol[2]
+                    savgol_deriv = savgol[2] # May also specify additional argument for derivative order
                 else:
                     raise TypeError("Savgol smoothing arguments incorrect.")
                 data[arg].x_stream, data[arg].y_stream = apply_savgol(data[arg].x_stream,data[arg].y_stream,savgol[0],savgol[1],savgol_deriv)
@@ -219,6 +247,7 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
 
         # Transforms RIXS to energy loss scale if incident energy is given
         if energyloss != None:
+            # If True, use value from mono to transform to energy loss, else use manual float input
             if energyloss == True:
                 data[arg].x_stream = np.average(data[arg].mono_energy)-data[arg].x_stream
             else:

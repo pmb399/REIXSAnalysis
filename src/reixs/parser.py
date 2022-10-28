@@ -7,6 +7,8 @@ from numpy import exp
 
 
 def math_stream(formula, data, arg, get_data, XAS_streams=None, is_XAS=False, background=None, REIXSObj=None):
+    """Internal function to apply math operations as requested on input string
+    """
     # Split the user input string at all mathematical operations
     # Allow "( ) * / + -" as math
 
@@ -17,10 +19,11 @@ def math_stream(formula, data, arg, get_data, XAS_streams=None, is_XAS=False, ba
     # drop all empty strings from re.split
     quantity_str_dict = dict()
 
+    # Check all stripped strings individually and evaluate
     for i, string in enumerate(split_expr):
         if string != "":
             try:
-                float(string)
+                float(string) # Check if string is float
             except:
                 # Use math expressions to allow logs and exps
                 math_expressions = ['ln', 'log', 'exp']
