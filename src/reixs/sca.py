@@ -104,28 +104,19 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
                 roi_low, roi_high = get_roi(roi)
 
                 # Utilize 2d EEMs to convert excitation emission map to energy loss scale
-                from .LoadData import EEMsLoader
-                import pandas as pd
-                import io
-
-                # Load the corresponding 2d EEMs image
-                eems = EEMsLoader()
-                eems.load(basedir, file, 'MCP', arg, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background, grid_x=grid_x,energyloss=True)
-                f,g = eems.get_data() # Extract the eems data and store in memory
-
-                # Read in the StrinIO variables from eems.get_data
-                # Need to get their values and transform to StringIO again for pandas to read
-                df = pd.read_csv(io.StringIO(f.getvalue()),skiprows=3,delimiter=",")
-                # Assign the data to variables
-                x_data = np.array(df["Motor Scale Gridded"].dropna())
-                matrix = np.loadtxt(io.StringIO(g.getvalue()),skiprows=4)
-                energy_transfer = np.array(df['Detector Scale Gridded'].dropna())
+                from .mca import loadMCAscans
                 
+                mca = loadMCAscans(basedir, file, 'Mono Energy', 'MCP Energy', 'MCP', arg, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background, grid_x=grid_x,energyloss=True)
+                x_data = mca[arg].new_x
+                energy_transfer = mca[arg].new_y
+                matrix = mca[arg].new_z
+               
                 # Set ROI
                 idx_min = np.abs(roi_low-energy_transfer).argmin()
                 idx_max = np.abs(roi_high-energy_transfer).argmin()
 
                 y_data = np.sum(matrix[:,idx_min:idx_max],axis=1)
+
                 # Store the corresponding new mono energy scale (gridded for even image spacing in eems 2d)
                 data[arg].mono_energy_gridded = x_data
 
@@ -208,7 +199,7 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
             data[arg].x_stream, data[arg].y_stream = bin_data(data[arg].x_stream,data[arg].y_stream,binsize)
 
         # Grid the data if specified
-        if grid_x != [None, None, None]:
+        if grid_x != [None, None, None] and not y_stream.startswith("ET"):
             new_x, new_y = grid_data(
                 data[arg].x_stream, data[arg].y_stream, grid_x)
 
@@ -216,16 +207,18 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
             data[arg].y_stream = new_y
 
         # Apply offsets to x-stream
-        data[arg].x_stream = apply_offset(
+        if not y_stream.startswith("ET"):
+            data[arg].x_stream = apply_offset(
             data[arg].x_stream, xoffset, xcoffset)
 
         # Apply normalization to [0,1]
-        if norm == True:
+        if norm == True and not y_stream.startswith("ET"):
             data[arg].y_stream = np.interp(
                 data[arg].y_stream, (data[arg].y_stream.min(), data[arg].y_stream.max()), (0, 1))
 
         # Apply offset to y-stream
-        data[arg].y_stream = apply_offset(
+        if not y_stream.startswith("ET"):
+            data[arg].y_stream = apply_offset(
             data[arg].y_stream, yoffset, ycoffset)
                
         # Smooth and take derivatives
