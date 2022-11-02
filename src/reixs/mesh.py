@@ -2,7 +2,7 @@ from .util import doesMatchPattern, check_key_in_dict, get_roi
 from .ReadData import REIXS
 from .edges import EdgeDict
 from .xeol import *
-from .simplemath import apply_offset
+from .simplemath import apply_offset, grid_data_mesh
 import warnings
 import numpy as np
 from .parser import math_stream
@@ -102,7 +102,11 @@ def loadMeshScans(basedir, file, x_stream, y_stream, z_stream, *args, norm=True,
                 return data[arg].sample_current
 
             else:
-                raise UserWarning("Special Stream not defined.")
+                try:
+                    # Else, load from pandas SCA data frame
+                    return get_sca_data(z_stream, data, arg)
+                except:
+                    raise UserWarning("Special Stream not defined.")
 
         else:
             return get_sca_data(z_stream, data, arg)
@@ -171,5 +175,16 @@ def loadMeshScans(basedir, file, x_stream, y_stream, z_stream, *args, norm=True,
         if norm == True:
             data[arg].z_data = np.interp(
                 data[arg].z_data, (data[arg].z_data.min(), data[arg].z_data.max()), (0, 1))
+
+        xmin, xmax, ymin, ymax, xedge, yedge, new_z, zmin, zmax = grid_data_mesh(data[arg].x_data,data[arg].y_data,data[arg].z_data)
+        data[arg].xmin = xmin
+        data[arg].xmax = xmax
+        data[arg].ymin = ymin
+        data[arg].ymax = ymax
+        data[arg].xedge = xedge
+        data[arg].yedge = yedge
+        data[arg].new_z = new_z
+        data[arg].zmin = zmin
+        data[arg].zmax = zmax
 
     return data

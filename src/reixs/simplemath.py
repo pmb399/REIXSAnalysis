@@ -153,6 +153,26 @@ def grid_data2d(x_data, y_data, detector, grid_x=[None, None, None],grid_y=[None
 
     return xmin, xmax, ymin, ymax, new_x, new_y, new_z
 
+def grid_data_mesh(x_data,y_data,z_data):
+    """Internal function to generate scatter histogram for 3 independent SCA streams."""
+    xmin = x_data.min()
+    xmax = x_data.max()
+    ymin = y_data.min()
+    ymax = y_data.max()
+    zmin = z_data.min()
+    zmax = z_data.max()
+
+    xunique = np.unique(x_data)
+    yunique = np.unique(y_data)
+
+    xbin = len(xunique)
+    ybin = len(yunique)
+
+    new_z, xedge, yedge = np.histogram2d(x_data, y_data, bins=[xbin, ybin], range=[
+                                            [xmin, xmax], [ymin, ymax]], weights=z_data)
+
+    return xmin, xmax, ymin, ymax, xedge, yedge, new_z, zmin, zmax
+
 def bin_data(x_data,y_data,binsize):
     """Reduce noise by averaging data points via binning mechanisms
     

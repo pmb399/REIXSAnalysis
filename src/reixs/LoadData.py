@@ -849,15 +849,23 @@ class LoadMesh:
         self.y_stream = list()
         self.z_stream = list()
         self.filename = list()
-        self.norm = list()
 
-    def load(self, basedir, file, x_stream, y_stream, z_stream, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None):
-        self.data.append(loadMeshScans(basedir, file, x_stream, y_stream, z_stream, *args, norm=norm,
-                         xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background))
+    def load(self, basedir, file, x_stream, y_stream, z_stream, *args, **kwargs):
+
+        # Set the defaults if not specified in **kwargs.
+        kwargs.setdefault("norm",False)
+        kwargs.setdefault("xoffset",None)
+        kwargs.setdefault("xcoffset",None)
+        kwargs.setdefault("yoffset",None)
+        kwargs.setdefault("ycoffset",None)
+        kwargs.setdefault("background",None)
+        #kwargs.setdefault("grid_x",[None, None, None])
+        #kwargs.setdefault("grid_y",[None, None, None])
+
+        self.data.append(loadMeshScans(basedir, file, x_stream, y_stream, z_stream, *args, **kwargs))
         self.x_stream.append(x_stream)
         self.y_stream.append(y_stream)
         self.z_stream.append(z_stream)
-        self.norm.append(norm)
         self.filename.append(file)
 
     def plot(self):
@@ -869,16 +877,15 @@ class LoadMesh:
                            tools="pan,wheel_zoom,box_zoom,reset,hover,crosshair,save")
                 p.x_range.range_padding = p.y_range.range_padding = 0
 
-                xmin, xmax, ymin, ymax, new_x, new_y, new_z, zmin, zmax = self.grid_data(
-                    v)
+                # Have the gridded data ready now from loader
 
                 # must give a vector of image data for image parameter
                 color_mapper = LinearColorMapper(palette="Viridis256",
-                                                 low=zmin,
-                                                 high=zmax)
+                                                 low=v.zmin,
+                                                 high=v.zmax)
 
-                p.image(image=[new_z], x=xmin, y=ymin, dw=xmax-xmin,
-                        dh=ymax-ymin, color_mapper=color_mapper, level="image")
+                p.image(image=[v.new_z], x=v.xmin, y=v.ymin, dw=v.xmax-v.xmin,
+                        dh=v.ymax-v.ymin, color_mapper=color_mapper, level="image")
                 p.grid.grid_line_width = 0.5
 
                 # Defining properties of color mapper
@@ -895,32 +902,12 @@ class LoadMesh:
 
                 show(p)
 
-    def grid_data(self, v):
-        xmin = v.x_data.min()
-        xmax = v.x_data.max()
-        ymin = v.y_data.min()
-        ymax = v.y_data.max()
-        zmin = v.z_data.min()
-        zmax = v.z_data.max()
-
-        xunique = np.unique(v.x_data)
-        yunique = np.unique(v.y_data)
-
-        xbin = len(xunique)
-        ybin = len(yunique)
-
-        new_z, xedge, yedge = np.histogram2d(v.x_data, v.y_data, bins=[xbin, ybin], range=[
-                                             [xmin, xmax], [ymin, ymax]], weights=v.z_data)
-
-        return xmin, xmax, ymin, ymax, xedge, yedge, new_z, zmin, zmax
-
     def get_data(self):
         f = io.StringIO()
         g = io.StringIO()
         for i, val in enumerate(self.data):
             for k, v in val.items():
-                xmin, xmax, ymin, ymax, new_x, new_y, new_z, zmin, zmax = self.grid_data(
-                    v)
+                # Have the gridded data ready now from loader
                 f.write("========================\n")
                 f.write(
                     f"F~{self.filename[i]}_S{v.scan}_{self.z_stream[i]}_{self.x_stream[i]}_{self.y_stream[i]}\n")
@@ -932,11 +919,11 @@ class LoadMesh:
                 g.write("========================\n")
 
                 f.write("=== x-axis bins ===\n")
-                np.savetxt(f, new_x)
+                np.savetxt(f, v.new_x)
                 f.write("=== y-axis bins ===\n")
-                np.savetxt(f, new_y)
+                np.savetxt(f, v.new_y)
                 g.write("=== Histogram ===\n")
-                np.savetxt(g, new_z, fmt="%.9g")
+                np.savetxt(g, v.new_z, fmt="%.9g")
         return f, g
 
     def export(self, filename):
