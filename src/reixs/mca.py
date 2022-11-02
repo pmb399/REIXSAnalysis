@@ -1,11 +1,11 @@
 import numpy as np
 from .ReadData import REIXS
 from .xeol import *
-from .simplemath import apply_offset
+from .simplemath import apply_offset, grid_data2d
 from .parser import math_stream
 
 
-def loadMCAscans(basedir, file, x_stream, y_stream, detector, *args, norm=True, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None):
+def loadMCAscans(basedir, file, x_stream, y_stream, detector, *args, norm=True, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None,grid_x=[None, None, None],grid_y=[None, None,None], background=None, energyloss=False):
     """Internal function to load MCA data
     
         Parameters
@@ -83,5 +83,14 @@ def loadMCAscans(basedir, file, x_stream, y_stream, detector, *args, norm=True, 
         # Normalize if requested
         if norm == True:
             data[arg].detector = data[arg].detector/np.max(data[arg].detector)
+
+        xmin, xmax, ymin, ymax, new_x, new_y, new_z = grid_data2d(data[arg].x_data, data[arg].y_data, data[arg].detector, grid_x=grid_x,grid_y=grid_y,energyloss=energyloss)
+        data[arg].xmin = xmin
+        data[arg].xmax = xmax
+        data[arg].ymin = ymin
+        data[arg].ymax = ymax
+        data[arg].new_x = new_x
+        data[arg].new_y = new_y
+        data[arg].new_z = new_z
 
     return data

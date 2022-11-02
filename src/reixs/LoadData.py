@@ -511,9 +511,6 @@ class Load2d:
         self.y_stream = list()
         self.detector = list()
         self.filename = list()
-        self.norm = list()
-        self.grid_x = list()
-        self.grid_y = list()
         self.plot_lim_x = [":",":"]
         self.plot_lim_y = [":",":"]
         self.plot_vlines = list()
@@ -521,7 +518,7 @@ class Load2d:
         self.plot_labels = list()
 
 
-    def load(self, basedir, file, x_stream, y_stream, detector, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, grid_x=[None, None, None], grid_y=[None, None, None]):
+    def load(self, basedir, file, x_stream, y_stream, detector, *args, **kwargs):
         """
         Load one or multiple specific scan(s) for selected streams.
 
@@ -573,20 +570,32 @@ class Load2d:
                     Grid data evenly on specified grid [low,high,step size]
                     default: [None, None, None]
         """
+
+        # Set the defaults if not specified in **kwargs.
+        kwargs.setdefault("norm",False)
+        kwargs.setdefault("xoffset",None)
+        kwargs.setdefault("xcoffset",None)
+        kwargs.setdefault("yoffset",None)
+        kwargs.setdefault("ycoffset",None)
+        kwargs.setdefault("background",None)
+        kwargs.setdefault("grid_x",[None, None, None])
+        kwargs.setdefault("grid_y",[None, None, None])
+        kwargs.setdefault("energyloss",False)
+
         # Ensure that only one scan is loaded.
         if len(args) != 1:
             raise TypeError("You may only select one scan at a time")
         if self.data != []:
             raise TypeError("You can only append one scan per object")
-        self.data.append(loadMCAscans(basedir, file, x_stream, y_stream, detector, *args, norm=norm,
-                         xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background))
+        self.data.append(loadMCAscans(basedir, file, x_stream, y_stream, detector, *args, **kwargs))
         self.x_stream.append(x_stream)
         self.y_stream.append(y_stream)
         self.detector.append(detector)
-        self.norm.append(norm)
         self.filename.append(file)
-        self.grid_x.append(grid_x)
-        self.grid_y.append(grid_y)
+
+        if kwargs['energyloss'] == True:
+            self.x_stream[-1] = "Energy loss (eV)"
+            self.y_stream[-1] = "Mono Energy (eV)"
 
     def xlim(self,lower,upper):
         """
@@ -662,9 +671,7 @@ class Load2d:
                            tools="pan,wheel_zoom,box_zoom,reset,hover,crosshair,save")
                 p.x_range.range_padding = p.y_range.range_padding = 0
 
-                # Grid the data evenly to generate image (not scatter plot)
-                xmin, xmax, ymin, ymax, new_x, new_y, new_z = self.grid_data(
-                    v, i)
+                # Gridded scales now calculated directly during the MCA load and only need to be referenced here
 
                 # must give a vector of image data for image parameter
                 color_mapper = LinearColorMapper(palette="Viridis256",
@@ -672,8 +679,8 @@ class Load2d:
                                                  high=v.detector.max())
 
                 # Plot image and use limits as given by even grid.
-                p.image(image=[new_z], x=xmin, y=ymin, dw=xmax-xmin,
-                        dh=ymax-ymin, color_mapper=color_mapper, level="image")
+                p.image(image=[v.new_z], x=v.xmin, y=v.ymin, dw=v.xmax-v.xmin,
+                        dh=v.ymax-v.ymin, color_mapper=color_mapper, level="image")
                 p.grid.grid_line_width = 0.5
 
                 # Defining properties of color mapper
@@ -716,44 +723,6 @@ class Load2d:
 
                 show(p)
 
-    def grid_data(self, v, i):
-        """Internal function to apply specified grid or ensure otherwise that axes are evenly spaced as this is required to plot an image."""
-
-        # Do auto-grid if not specified otherwise
-        # Take step-size as smallest delta observed in data array
-        if self.grid_x[i] == [None, None, None]:
-            xmin = v.x_data.min()
-            xmax = v.x_data.max()
-            x_points = int(
-                np.ceil((xmax-xmin)/np.abs(np.diff(v.x_data)).min())) + 1
-
-        else:
-            xmin = self.grid_x[i][0]
-            xmax = self.grid_x[i][1]
-            x_points = int(np.ceil((xmax-xmin)/self.grid_x[i][2])) + 1
-
-        # Same as above, now for second axis.
-        if self.grid_y[i] == [None, None, None]:
-            ymin = v.y_data.min()
-            ymax = v.y_data.max()
-            y_points = int(
-                np.ceil((ymax-ymin)/np.abs(np.diff(v.y_data)).min())) + 1
-
-        else:
-            ymin = self.grid_y[i][0]
-            ymax = self.grid_y[i][1]
-            y_points = int(np.ceil((ymax-ymin)/self.grid_y[i][2])) + 1
-
-        # Interpolate the data with given grid
-        f = interp2d(v.x_data, v.y_data, v.detector)
-
-        new_x = np.linspace(xmin, xmax, x_points, endpoint=True)
-        new_y = np.linspace(ymin, ymax, y_points, endpoint=True)
-        # Interpolate image on evenly-spaced grid
-        new_z = f(new_x, new_y)
-
-        return xmin, xmax, ymin, ymax, new_x, new_y, new_z
-
     def get_data(self):
         """Make data available in memory as exported to file.
 
@@ -774,9 +743,8 @@ class Load2d:
         g = io.StringIO()
         for i, val in enumerate(self.data):
             for k, v in val.items():
-                # Generate the gridded scales for f.
-                xmin, xmax, ymin, ymax, new_x, new_y, new_z = self.grid_data(
-                    v, i)
+                # Gridded scales now calculated directly during the MCA load and only need to be referenced here
+
                 # Start writing string f
                 f.write("========================\n")
                 f.write(
@@ -791,16 +759,16 @@ class Load2d:
 
                 # Append data to string now.
                 s1 = pd.Series(
-                    new_x, name="Motor Scale Gridded")
+                    v.new_x, name="Motor Scale Gridded")
                 df = df.append(s1)
                 s2 = pd.Series(
-                    new_y, name="Detector Scale Gridded")
+                    v.new_y, name="Detector Scale Gridded")
                 df = df.append(s2)
                 dfT = df.transpose(copy=True)
                 dfT.to_csv(f, index=False, line_terminator='\n')
 
                 g.write("=== Image ===\n")
-                np.savetxt(g, new_z, fmt="%.9g")
+                np.savetxt(g, v.new_z, fmt="%.9g")
 
             return f, g
 
@@ -855,11 +823,7 @@ class Load2d:
 
 class EEMsLoader(Load2d):
     """Specific 2d loader for excitation-emission-maps."""
-    def __init__(self):
-        self.energyloss = list()
-        super().__init__()
-
-    def load(self, basedir, file, detector, *args, norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, grid_x=[None, None, None], grid_y=[None, None, None],energyloss=False):
+    def load(self, basedir, file, detector, *args, **kwargs):
         x_stream = 'Mono Energy'
 
         if detector == "MCP":
@@ -871,67 +835,7 @@ class EEMsLoader(Load2d):
         else:
             raise TypeError("Detector not defined.")
 
-        # May select to plot 2d EEMs image on energy loss scale.
-        self.energyloss.append(energyloss)
-
-        super().load(basedir, file, x_stream, y_stream, detector, *args, norm=norm, xoffset=xoffset,
-                     xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background, grid_x=grid_x, grid_y=grid_y)
-
-    def grid_data(self, v, i):
-        # Same as for the generic case if energyloss is not selected.
-        if self.energyloss[i] == False:
-            return super().grid_data(v, i)
-        
-        # We will be swicthing x and y later
-        # Here, grid_x and grid_y will already refer to switched axes
-        else:
-            if self.grid_y[i] == [None,None,None]:
-                xmin = v.x_data.min()
-                xmax = v.x_data.max()
-                x_points = int(np.ceil((xmax-xmin)/np.abs(np.diff(v.x_data)).min())) + 1
-            else:
-                xmin = self.grid_y[i][0]
-                xmax = self.grid_y[i][1]
-                x_points = int(np.ceil((xmax-xmin)/self.grid_y[i][2])) + 1
-
-            energy_loss_axes = list()
-
-            # Calculate the energy loss axis for each mono energy as the incident energy will change the axis.
-            for monoE in v.x_data:
-                energy_loss_axes.append(monoE-v.y_data)
-
-            # Determine the widest range where data is available on the rotated image.
-            if self.grid_x[i] == [None,None,None]:
-                ymin = energy_loss_axes[-1][-1]
-                ymax = energy_loss_axes[0][0]
-                y_points = int(np.abs(np.ceil((ymax-ymin)/np.diff(energy_loss_axes[0]).min())))
-
-            else:
-                ymin = self.grid_x[i][0]
-                ymax = self.grid_x[i][1]
-                y_points = int(np.ceil((ymax-ymin)/self.grid_x[i][2])) + 1
-
-            # Generate new axis as per the rotated image above.
-            new_x = np.linspace(xmin, xmax, x_points, endpoint=True)
-            new_y = np.linspace(ymin, ymax, y_points, endpoint=True)
-
-            scatter_z = np.zeros((len(v.x_data),len(new_y)))
-
-            # Evaluate the detector image on the new common energy axis
-            for idx,val in enumerate(np.transpose(v.detector)):
-                scatter_z[idx,:] = interp1d(energy_loss_axes[idx],val)(new_y)
-
-            f = interp2d(v.x_data,new_y,np.transpose(scatter_z))
-            new_z = f(new_x,new_y)
-
-            # Switch x and y, so that we plot MCP Energy loss on horizontal axis
-            # Overwrite stream names
-            # Possibe since there can only be one scan per loader
-
-            self.x_stream[i] = "Energy loss (eV)"
-            self.y_stream[i] = "Mono Energy (eV)"
-
-            return ymin, ymax, xmin, xmax, new_x, new_y, np.transpose(new_z)
+        super().load(basedir, file, x_stream, y_stream, detector, *args, **kwargs)
 
 #########################################################################################
 
