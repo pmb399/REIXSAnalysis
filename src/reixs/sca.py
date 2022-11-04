@@ -18,9 +18,9 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
 
     # Define special streams that are calculated internally
     special_streams = ['TEY', 'TFY', 'PFY', 'iPFY', 'XES', 'rXES', 'specPFY',
-                       'XRF', 'rXRF', 'XEOL', 'rXEOL', 'POY', 'TOY', 'EY', 'Sample', 'Mesh', 'ET']  # all special inputs
+                       'XRF', 'rXRF', 'XEOL', 'rXEOL', 'POY', 'TOY', 'EY', 'Sample', 'Mesh', 'ET', 'rLOSS']  # all special inputs
     XAS_streams = ['TEY', 'TFY', 'PFY', 'iPFY', 'specPFY', 'POY',
-                   'TOY', 'rXES', 'rXRF', 'rXEOL', 'ET']  # All that are normalized to mesh
+                   'TOY', 'rXES', 'rXRF', 'rXEOL', 'ET', 'rLOSS']  # All that are normalized to mesh
 
     # Note that the data dict only gets populated locally until the appropriate
     # singular y stream is return -- Assignment of y_stream happens after evaluation
@@ -99,7 +99,7 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
                 return poy_spec(data, arg, REIXSobj, roi_low, roi_high, background_scan=background)
 
             elif doesMatchPattern(y_stream, ['ET']):
-                # This is to integrate over an energy transfer region
+                # This is to integrate over an energy transfer region -- probes constant final states
                 roi = y_stream.lstrip("ET[").rstrip("]")
                 roi_low, roi_high = get_roi(roi)
 
@@ -119,6 +119,30 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
 
                 # Store the corresponding new mono energy scale (gridded for even image spacing in eems 2d)
                 data[arg].mono_energy_gridded = x_data
+
+                return y_data
+
+            elif doesMatchPattern(y_stream, ['rLOSS']):
+                # This is to integrate over an constant incident energy region -- probes constant intermediate states
+                roi = y_stream.lstrip("rLOSS[").rstrip("]")
+                roi_low, roi_high = get_roi(roi)
+
+                # Utilize 2d EEMs to convert excitation emission map to energy loss scale
+                from .mca import loadMCAscans
+                
+                mca = loadMCAscans(basedir, file, 'Mono Energy', 'MCP Energy', 'MCP', arg, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background, grid_x=grid_x,energyloss=True)
+                x_data = mca[arg].new_x
+                energy_transfer = mca[arg].new_y
+                matrix = mca[arg].new_z
+               
+                # Set ROI
+                idx_min = np.abs(roi_low-x_data).argmin()
+                idx_max = np.abs(roi_high-x_data).argmin()
+
+                y_data = np.sum(matrix[idx_min:idx_max,:],axis=0)
+
+                # Store the corresponding new energy loss scale (gridded for even image spacing in eems 2d)
+                data[arg].energy_loss_gridded = energy_transfer
 
                 return y_data
 
@@ -161,6 +185,8 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
         if x_stream == "Mono Energy":
             if y_stream.startswith("ET"):
                 return data[arg].mono_energy_gridded
+            elif y_stream.startswith('rLOSS'):
+                return data[arg].energy_loss_gridded
             else:
                 return data[arg].mono_energy
 
@@ -199,7 +225,7 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
             data[arg].x_stream, data[arg].y_stream = bin_data(data[arg].x_stream,data[arg].y_stream,binsize)
 
         # Grid the data if specified
-        if grid_x != [None, None, None] and not y_stream.startswith("ET"):
+        if grid_x != [None, None, None] and (not y_stream.startswith("ET") and not y_stream.startswith('rLOSS')):
             new_x, new_y = grid_data(
                 data[arg].x_stream, data[arg].y_stream, grid_x)
 
@@ -207,17 +233,17 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
             data[arg].y_stream = new_y
 
         # Apply offsets to x-stream
-        if not y_stream.startswith("ET"):
+        if not y_stream.startswith("ET") and not y_stream.startswith('rLOSS'):
             data[arg].x_stream = apply_offset(
             data[arg].x_stream, xoffset, xcoffset)
 
         # Apply normalization to [0,1]
-        if norm == True and not y_stream.startswith("ET"):
+        if norm == True and (not y_stream.startswith("ET") and not y_stream.startswith('rLOSS')):
             data[arg].y_stream = np.interp(
                 data[arg].y_stream, (data[arg].y_stream.min(), data[arg].y_stream.max()), (0, 1))
 
         # Apply offset to y-stream
-        if not y_stream.startswith("ET"):
+        if not y_stream.startswith("ET") and not y_stream.startswith('rLOSS'):
             data[arg].y_stream = apply_offset(
             data[arg].y_stream, yoffset, ycoffset)
                
