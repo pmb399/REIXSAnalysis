@@ -98,7 +98,7 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
 
                 return poy_spec(data, arg, REIXSobj, roi_low, roi_high, background_scan=background)
 
-            if doesMatchPattern(y_stream, ['ET']):
+            elif doesMatchPattern(y_stream, ['ET']):
                 # This is to integrate over an energy transfer region
                 roi = y_stream.lstrip("ET[").rstrip("]")
                 roi_low, roi_high = get_roi(roi)
