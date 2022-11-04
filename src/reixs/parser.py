@@ -32,6 +32,11 @@ def math_stream(formula, data, arg, get_data, XAS_streams=None, is_XAS=False, ba
                     pass
 
                 else:
+                    # Need to allow special case where negative numbers can be assigned in ET scan
+                    if string.endswith("ET["): # This will only be triggered if the arguments of [] are negative, otherwise the string will not be split
+                        string += '-' + split_expr[i+1] # Add the negative sign back in and add to current scan descriptor
+                        del split_expr[i+1] # Drop the extra element
+
                     # Assign generic "val{i}" key to string literal in compliance with
                     # python supported syntax for variables
                     quantity_str_dict[f"val{i}"] = string
