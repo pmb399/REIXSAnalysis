@@ -232,7 +232,7 @@ def take_derivative2d(z, x, y, deg):
 
 ### ---- ###
 
-# New way for smooting and taking derivatives
+# New way for smoothing and taking derivatives
 def apply_savgol(x,y,window,polyorder,deriv):
     """Appply smoothing and take derivatives
     
