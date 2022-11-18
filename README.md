@@ -50,18 +50,26 @@ output_notebook(hide_banner=True)
 
 ```
 sca = Load1d()
-sca.load(basedir,'FileName.dat','x_stream','y_stream',1,2,3,4,norm=True)
-sca.addScans(basedir,'FileName.dat','x_stream','y_stream',1,2,3,4,norm=False,avg=False)
-sca.subtractScans(basedir,'FileName.dat','x_stream','y_stream',1,2,3,4,norm=False,avg=False)
-sca.plot()
-sca.exporter()
+sca.load(basedir,'FileName.dat','x_stream','y_stream',1,2,3,4)  # Loads multiple scans individually
+sca.add(basedir,'FileName.dat','x_stream','y_stream',1,2,3,4)  # Adds multiple scans
+sca.subtract(basedir,'FileName.dat','x_stream','y_stream',1,2,3,4,norm=False) # Subtracts scans from the first scan
+sca.xlim(lower_lim,upper_lim) # Sets the horizontal axis plot region
+sca.ylim(lower_lim,upper_lim) # Sets the vertical axis plot region
+sca.plot_legend("pos string as per bokeh") # Determines a specific legend position
+sca.vline(position) # Draws a vertical line
+sca.hline(position) # Draws a horizontal line
+sca.label(pos_x,pos_y,'Text') # Adds a label to the plot
+sca.plot() # Plots the defined object
+sca.exporter() # Exports the data by calling an exporter widget
 ```
 
+0. Create "Loader" object
+
 1. Specify the variable for the base directory (basedir)
+
 2. Enter the file name of the scan to analyse ('FileName.dat')
 
 3. Options for **x_stream** quantities include:
-
 - All quantities in the header file
 - _Mono Energy_ for the excitation energy
 - _MCP Energy_ (uncalibrated)
@@ -70,7 +78,6 @@ sca.exporter()
 - _Points_ (by index)
 
 4. Options for **y_stream** quantities include:
-
 - All quantities in the header file
 - _TEY_ (Total Electron Yield: sample normalized by mesh)
 - _TFY_ (Total Fluorescence Yield, normalized by mesh)
@@ -88,11 +95,18 @@ sca.exporter()
 - _XEOL_ and _rXEOL_ (XEOL data from the optical spectrometer)
 - _POY_ and _TOY_ (Partial optical yield and total optical yield, normalized by mesh)
   e.g. POY[300:750]
+- _EY_ or _Sample_ (Sample current, not normalized by mesh)
+- _Mesh_ (Mesh current)
+- _ET_ (Energy Transfer data, integrates over energy loss ROI and probes constant final states, sometimes referred to as CET scan)
+  specify energy transfer region
+  e.g. ET[-2:5] to probe mostly scattering close to the elastic line
+- _rLOSS_ (Resonantly excited emission data on energy loss scale, integrates over incident energy ROIS and probes constant intermediate states, sometimes referred to as CIE scan)
+  specify incident energy region
+  e.g. rLOSS[620:640]
 
 5. List all scans to analyse (comma-separated)
 
 6. Set optional flags. Options include:
-
 - _norm_ (Normalizes to [0,1])
 - _xcoffset_ (Defines a constant shift in the x-stream)
 - _xoffset_ (Takes a list of tuples and defines a polynomial fit of the x-stream)
@@ -100,16 +114,25 @@ sca.exporter()
 - _yoffset_ (Takes a list of tuples and defines a polynomial fit of the y-stream)
   e.g. offset = [(100,102),(110,112),(120,121)]
 - _background_ (Subtracts a XEOL background from XEOL scans)
-- _energyloss_ (Requires the incident photon energy and moves the resultant MCP scale to energy loss)
+  Set to True, uses the getXEOLback function with the background data stored (only supported with HDF5)
+  Specify scan number, subtracts the XEOL scan taken at this particular scan
+- _energyloss_ (Transfers the resultant MCP scale to energy loss 
+  Set to True, then takes mean of mono energy array
+  Specify float with the incident photon energy
+- _grid_x_ (Takes a list with three arguments to apply 1d interpolation gridding)
+  e.g. grid_x = [Start Energy, Stop Energy, Delta]
+- _savgol_ (Takes a list with two or three arguments to apply data smoothing and derivatives)
+  e.g. savgol = [Window length, Polynomial order, deriavtive] as specified in the scipy Savitzky-Golay filter
+- _binsize_ (int, allows to perform data binning to improve Signal-to-Noise)
 
 #### Absorption Scans
 
 ```
 xas = XASLoader()
-#xas.load(basedir,'Plate2a.dat','TEY',1,4,6,norm=True)
-#xas.load(basedir,'Plate2a.dat','PFY[O]',1,4,norm=True)
-xas.add(basedir,'Plate2a.dat','PFY[O]',1,4,norm=False,avg=False)
-xas.subtract(basedir,'Plate2a.dat','PFY[O]',1,4,6,norm=False,avg=False)
+xas.load(basedir,'Plate2a.dat','TEY',1,4,6)
+xas.load(basedir,'Plate2a.dat','PFY[O]',1,4)
+xas.add(basedir,'Plate2a.dat','PFY[500:520]',1,4)
+xas.subtract(basedir,'Plate2a.dat','specPFY[500:520]',1,4,6)
 xas.plot()
 xas.exporter()
 ```
@@ -119,10 +142,9 @@ xas.exporter()
 ```
 xes = XESLoader()
 # Options: XES, rXES
-xes.load(basedir,'Plate2a.dat','XES',3,xoffset=[(510,520)])
-xes.load(basedir,'Plate2a.dat','XES',3)
+xes.load(basedir,'Plate2a.dat','XES',3,xoffset=[(515,520),(520,525),(530,535)])
 xes.load(basedir,'Plate2a.dat','rXES[520:560]',4)
-xes.add(basedir,'Plate2a.dat','XES',1,4,)
+xes.add(basedir,'Plate2a.dat','XES',1,4)
 xes.subtract(basedir,'Plate2a.dat','XES',1,4)
 xes.plot()
 xes.exporter()
@@ -133,7 +155,6 @@ xes.exporter()
 ```
 xrf = XRFLoader()
 # Options XRF,rXRF
-xrf.load(basedir,'Plate2a.dat','XRF',3,xoffset=[(510,520)])
 xrf.load(basedir,'Plate2a.dat','XRF',3)
 xrf.load(basedir,'Plate2a.dat','rXRF[520:560]',4)
 xrf.add(basedir,'Plate2a.dat','XRF',1,4,)
@@ -142,27 +163,66 @@ xrf.plot()
 xrf.exporter()
 ```
 
-#### XEOL Scans
+#### XEOL Scans (Optical Spectrometer)
 
 ```
 xeol = XEOLLoader()
 #Options: XEOL, rXEOL
 xeol.load(basedir,'RIXS_ES_QA.dat','XEOL',1,2,3,4,background=3)
+xeol.load(basedir,'RIXS_ES_QA.dat','XEOL',1,2,3,4,background=True)
 xeol.plot()
 ```
 
 ### 2d Images
 
+#### General loader for MCA detector data
+
 Note: Can only load one scan at a time!
 
 ```
 load2d = Load2d()
-load2d.load(basedir,'Plate2a.dat','Mono Energy','SDD Energy','SDD',1)
+load2d.load(basedir,'Filename.dat','x_stream','y_stream','detector',1)
 load2d.plot()
 load2d.exporter()
 ```
 
-### EEMs (normalized by mesh current)
+0. Create "Loader" object
+
+1. Specify the variable for the base directory (basedir)
+
+2. Enter the file name of the scan to analyse ('FileName.dat')
+
+3. Options for **x_stream** quantities include:
+- All quantities in the header file
+- _Mono Energy_ for the excitation energy
+
+4. Options for **y_stream** quantities include:
+- _SDD Energy_ (Energy scale of the SDD detector)
+- _MCP Energy_ (Energy scale of the MCP detector)
+- _XEOL Energy_ (Wavelength scale of the XEOL optical spectrometer)
+
+5. Options for **detector** quantities include:
+- _SDD_ (SDD detector MCA)
+- _MCP_ (MCP detector MCA)
+- _XEOL_ (XEOL optical spectrometer MCA)
+
+6. List all scans to analyse (comma-separated)
+
+7. Set optional flags. Options include:
+- _norm_ (Normalizes to [0,1])
+- _xcoffset_ (Defines a constant shift in the x-stream)
+- _xoffset_ (Takes a list of tuples and defines a polynomial fit of the x-stream)
+- _ycoffset_ (Defines a constant shift in the y-stream)
+- _yoffset_ (Takes a list of tuples and defines a polynomial fit of the y-stream)
+  e.g. offset = [(100,102),(110,112),(120,121)]
+- _background_ (Subtracts a XEOL background from XEOL scans)
+  Set to True, uses the getXEOLback function with the background data stored (only supported with HDF5)
+  Specify scan number, subtracts the XEOL scan taken at this particular scan
+- _energyloss_ (Transfers the excitation-emission map to energy loss scale
+- _grid_x_ (Takes a list with three arguments to apply 1d interpolation gridding)
+  e.g. grid_x = [Start Energy, Stop Energy, Delta]
+
+#### EEMs (normalized by mesh current, special version of the general 2d image loader)
 
 Note: Can only load one scan at a time!
 
@@ -175,12 +235,48 @@ eems.plot()
 eems.exporter()
 ```
 
-### Mesh Scans
+### Mesh Scans (Plots a 2d histogram)
 
 ```
 mesh = LoadMesh()
-mesh.load(basedir,'mesh_scan.txt','Y','Z','TEY',24,norm=True)
+mesh.load(basedir,'Filename.txt','x_stream','y_stream','z_stream',24)
 mesh.plot()
 mesh.exporter()
 ```
 
+0. Create "Loader" object
+
+1. Specify the variable for the base directory (basedir)
+
+2. Enter the file name of the scan to analyse ('FileName.dat')
+
+3. Options for **x_stream** quantities include:
+- All quantities in the header file
+- _Mono Energy_ for the excitation energy
+- _SDD Energy_ (Energy scale of the SDD detector)
+- _MCP Energy_ (Energy scale of the MCP detector)
+- _XEOL Energy_ (Wavelength scale of the XEOL optical spectrometer)
+
+4. Options for **y_stream** quantities include:
+- All quantities in the header file
+- _Mono Energy_ for the excitation energy
+- _SDD Energy_ (Energy scale of the SDD detector)
+- _MCP Energy_ (Energy scale of the MCP detector)
+- _XEOL Energy_ (Wavelength scale of the XEOL optical spectrometer)
+
+5. Options for **z_stream** quantities include:
+- All quantities in the header file
+- All special quantities as specified for the Load1d() function
+
+6. List all scans to analyse (comma-separated)
+
+7. Set optional flags. Options include:
+- _norm_ (Normalizes to [0,1])
+- _xcoffset_ (Defines a constant shift in the x-stream)
+- _xoffset_ (Takes a list of tuples and defines a polynomial fit of the x-stream)
+- _ycoffset_ (Defines a constant shift in the y-stream)
+- _yoffset_ (Takes a list of tuples and defines a polynomial fit of the y-stream)
+  e.g. offset = [(100,102),(110,112),(120,121)]
+- _background_ (Subtracts a XEOL background from XEOL scans)
+  Set to True, uses the getXEOLback function with the background data stored (only supported with HDF5)
+  Specify scan number, subtracts the XEOL scan taken at this particular scan
