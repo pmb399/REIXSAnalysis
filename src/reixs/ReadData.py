@@ -34,23 +34,18 @@ def REIXS(baseName, header_file):
             Give name of header file with extension
     """
 
+    def handle_exception(e):
+        return REIXS_ASCII(baseName, header_file, REIXSconfig)
+
     # Read in parameter/variable config (either external from os.env or internal default)
     REIXSconfig = get_REIXSconfig()
 
     # Return REIXS objects based on extension
     # Always default to HDF5
-    if header_file.endswith(".h5"):
-        return REIXS_HDF5(baseName, header_file, REIXSconfig)
-
-    elif header_file.endswith(".dat"):
-        return REIXS_ASCII(baseName, header_file, REIXSconfig)
-
+    if "." in header_file:
+        return REIXS_HDF5(baseName, header_file, REIXSconfig, handle_exception)
     else:
-        try:
-            return REIXS_HDF5(baseName, header_file, REIXSconfig)
-        except:
-            return REIXS_ASCII(baseName, header_file, REIXSconfig)
-
+        return REIXS_HDF5(baseName, str(header_file)+".h5", REIXSconfig, handle_exception)
         
 class REIXS_HDF5(object):
     """REIXS data object  HDF5
@@ -64,12 +59,14 @@ class REIXS_HDF5(object):
         REIXSconfig : dict
             Spec paramter to python variable dict
     """
-    def __init__(self, baseName, header_file, REIXSconfig):
+    def __init__(self, baseName, header_file, REIXSconfig, handle_exception):
         try:
             self.file = os.path.join(baseName, header_file)
         except:
             raise TypeError("You did not specify a directory path.")
         self.REIXSconfig = REIXSconfig
+
+        self.handle_exception = handle_exception
 
     def Scan(self, scan):
         """Load one specific scan from specified data file
@@ -150,6 +147,42 @@ class REIXS_HDF5(object):
                                 f[f'{my.scan}/{self.REIXSconfig["HDF5_sca_data"]}/{entry}'])
                     except:
                         warnings.warn("Could not load SCAs from HDF5 container.")
+
+            except OSError as e:
+                obj = self.handle_exception(e)
+                
+                my.scan = scan
+                my.mono_energy = obj.Scan(scan).mono_energy
+                my.mesh_current = obj.Scan(scan).mesh_current
+                my.sample_current = obj.Scan(scan).sample_current
+                my.TEY = my.sample_current/my.mesh_current
+                try:
+                    my.sdd_data = obj.Scan(scan).sdd_data
+                    my.sdd_energy = obj.Scan(scan).sdd_energy
+                except:
+                    warnings.warn("Could not load SDD data / SDD energy scale")
+                try:
+                    my.xeol_data = obj.Scan(scan).xeol_data
+                    my.xeol_energy = obj.Scan(scan).xeol_energy
+                    my.xeol_background = obj.Scan(scan).xeol_background
+                except:
+                    warnings.warn("Could not load XEOL data / XEOL emission scale")
+                try:
+                    if obj.MCPRIXS == True:
+                        my.mcp_data = obj.Scan(scan).mcp_data
+                        my.mcp_energy = obj.Scan(scan).mcp_energy
+                    elif obj.MCPRSXS == True:
+                        my.mcpRSXS_scales = obj.Scan(scan).mcpRSXS_scales
+                        my.mcpRSXS_scatters = obj.Scan(scan).mcpRSXS_scatters
+                        my.mcpRSXS_axes = obj.Scan(scan).mcpRSXS_axes
+                    else:
+                        warnings.warn("No MCP data found")
+                except:
+                    warnings.warn("Could not load MCP data / MCP energy scale")
+                try:
+                    my.sca_data = obj.Scan(scan).sca_data
+                except:
+                    warnings.warn("Could not load SCAs from ASCII.")
 
             except:
                 raise ValueError("Scan Data not defined")
@@ -243,6 +276,36 @@ class REIXS_HDF5(object):
                 my.MCP_norm()
 
             return rixs_readutil.specPFY(my.mcp_energy, my.mcp_data_norm, mcp_lowE, mcp_highE)
+
+        def RSXS_MCPnorm(my):
+            """Normalize RSXS MCP data by incident flux"""
+            my.RSXSMCP_norm = dict()
+            # Need to appyly the flux correction to all scatters at each data point
+            for k, v in my.mcpRSXS_scatters.items():
+                my.RSXSMCP_norm[k] = np.true_divide(v, my.mesh_current[k])
+
+            return my.RSXSMCP_norm
+
+        def RSXS_1dROI(my, img, x_low=None, x_high=None, y_low=None, y_high=None, axis=0):
+            """Collape RSXS MCP data to 1d plot"""
+            if not(hasattr(my, 'RSXSMCP_norm')):
+                my.RSXS_MCPnorm()
+
+            return img_to_sca(my.mcpRSXS_scales, my.RSXSMCP_norm, img, x_low, x_high, y_low, y_high, axis)
+
+        def RSXS_2dROI(my, x_low=None, x_high=None, y_low=None, y_high=None, axis=0):
+            """Integrate RSXS MCP data to 2d plot"""
+            if not(hasattr(my, 'RSXSMCP_norm')):
+                my.RSXS_MCPnorm()
+
+            return stack_to_mca(my.mcpRSXS_scales, my.RSXSMCP_norm, x_low, x_high, y_low, y_high, axis)
+
+        def RSXS_Images(my):
+            """Stack the data with multiple images."""
+            if not(hasattr(my, 'RSXSMCP_norm')):
+                my.RSXS_MCPnorm()
+
+            return grid_stack(my.mcpRSXS_scales, my.RSXSMCP_norm)
 
 
 class REIXS_ASCII(object):
@@ -694,113 +757,3 @@ class REIXS_ASCII(object):
                         self.xeol_datasets[my.scanxeol], skiprows=4096)
                 except:
                     raise UserWarning("Could not load XEOL data from file.")
-
-        def MCP_norm(my):
-            """Normalize the counts of the MCP by incident flux at every given datapoint.
-               This is only applied to EEMs."""
-
-            my.mcp_data_norm = np.transpose(rixs_readutil.detector_norm(my.mcp_data,my.mesh_current))
-
-            return my.mcp_data_norm
-
-        def XES(my):
-            """Sum the MCP detector image over all recorded datapoints."""
-
-            return rixs_readutil.XES(my.mcp_data)
-
-        def rXES(my, xes_incident_start, xes_incident_end):
-            """Calculate resonant emission at selected energy (MCP)."""
-
-            if not(hasattr(my, 'mcp_data_norm')):
-                my.MCP_norm()
-
-            return rixs_readutil.rXES(my.mono_energy, my.mcp_data_norm, xes_incident_start, xes_incident_end)
-
-        def SDD_norm(my):
-            my.sdd_data_norm = rixs_readutil.detector_norm(my.sdd_data,my.mesh_current[:,None])
-
-            return my.sdd_data_norm
-
-        def XRF(my):
-            """Sum the SDD detector image over all recorded datapoints"""
-
-            return rixs_readutil.XRF(my.sdd_data)
-
-        def rXRF(my, xes_incident_start, xes_incident_end):
-            """Calculate resonant emission at selected energy (SDD)."""
-
-            if not(hasattr(my, 'sdd_data_norm')):
-                my.SDD_norm()
-
-            return rixs_readutil.rXRF(my.mono_energy, my.sdd_data_norm, xes_incident_start, xes_incident_end)
-
-        def PFY(my, PFY_edge=None, SDDLowerBound=None, SDDUpperBound=None):
-            """ Calculate PFY based on a defined ROI.
-
-            Prerequisites:
-                Option 1: Define ROI via ROI method
-                    PFY_edge : string
-                Option 2: Define ROI explictily by calling
-                    SDDLowerBound : float, lower energy limit for summation
-                    SDDUpperBound : float, upper energy limit for summation
-
-            """
-
-            return rixs_readutil.PFY(my.sdd_energy, my.sdd_data, my.mesh_current, PFY_edge, SDDLowerBound, SDDUpperBound)
-
-        def iPFY(my, iPFY_edge=None, iSDDLowerBound=None, iSDDUpperBound=None):
-            """ Calculate iPFY based on a defined ROI.
-
-                Prerequisites:
-                    Option 1: Define ROI via ROI method (and specify **kwarg iPFY_edge)
-                        iPFY_edge : string
-                    Option 2: Define ROI explictily by calling
-                        iSDDLowerBound : float, lower energy limit for summation
-                        iSDDUpperBound : float, upper energy limit for summation
-            """
-
-            return rixs_readutil.iPFY(my.sdd_energy, my.sdd_data, my.mesh_current, iPFY_edge, iSDDLowerBound, iSDDUpperBound)
-
-        def TFY(my):
-            """Calculate TFY by summing over entire SDD image without ROI."""
-            # Transform this to TFY spectrum (rows = incident energy points, columns = detector 'space')
-
-            return rixs_readutil.TFY(my.sdd_data, my.mesh_current)
-
-        def specPFY(my, mcp_lowE, mcp_highE):
-            """Calculate spectrometer PFY based on ROI set."""
-
-            if not(hasattr(my, 'mcp_data_norm')):
-                my.MCP_norm()
-
-            return rixs_readutil.specPFY(my.mcp_energy, my.mcp_data_norm, mcp_lowE, mcp_highE)
-
-        def RSXS_MCPnorm(my):
-            """Normalize RSXS MCP data by incident flux"""
-            my.RSXSMCP_norm = dict()
-            # Need to appyly the flux correction to all scatters at each data point
-            for k, v in my.mcpRSXS_scatters.items():
-                my.RSXSMCP_norm[k] = np.true_divide(v, my.mesh_current[k])
-
-            return my.RSXSMCP_norm
-
-        def RSXS_1dROI(my, img, x_low=None, x_high=None, y_low=None, y_high=None, axis=0):
-            """Collape RSXS MCP data to 1d plot"""
-            if not(hasattr(my, 'RSXSMCP_norm')):
-                my.RSXS_MCPnorm()
-
-            return img_to_sca(my.mcpRSXS_scales, my.RSXSMCP_norm, img, x_low, x_high, y_low, y_high, axis)
-
-        def RSXS_2dROI(my, x_low=None, x_high=None, y_low=None, y_high=None, axis=0):
-            """Integrate RSXS MCP data to 2d plot"""
-            if not(hasattr(my, 'RSXSMCP_norm')):
-                my.RSXS_MCPnorm()
-
-            return stack_to_mca(my.mcpRSXS_scales, my.RSXSMCP_norm, x_low, x_high, y_low, y_high, axis)
-
-        def RSXS_Images(my):
-            """Stack the data with multiple images."""
-            if not(hasattr(my, 'RSXSMCP_norm')):
-                my.RSXS_MCPnorm()
-
-            return grid_stack(my.mcpRSXS_scales, my.RSXSMCP_norm)
