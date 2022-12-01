@@ -2,6 +2,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from .sca import loadSCAscans
 from .simplemath import apply_offset, apply_savgol
+import warnings
 
 def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None,energyloss=None,grid_x=[None,None,None],savgol=None,binsize=None):
     """Internal function to handle scan addition.
@@ -36,6 +37,7 @@ def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False,
         if i == 0:
             MASTER_x_stream = v.x_stream
             MASTER_y_stream = v.y_stream
+            MASTER_mono = np.average(v.mono_energy)
             name = str(k)+'+'
         else:
             # Ensure that we only add emission scans when the spectrometer energy scale is identical
@@ -45,6 +47,10 @@ def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False,
                         "Cannot add emission spectra with different energy scales.")
                 else:
                     MASTER_y_stream += v.y_stream
+
+                if MASTER_mono > 0.1+ np.average(v.mono_energy) or MASTER_mono < np.average(v.mono_energy) - 0.1:
+                    warnings.warn("Changed average mono energy by more than 0.1 eV.")
+
             else:
                 # For scans other than emission, set the first x-scale as master and interpolate all
                 # data suczessively to ensure appropriate addition
@@ -93,7 +99,10 @@ def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False,
 
     # Shift data to energy loss scale
     if energyloss!=None:
-        data[0].x_stream = energyloss-data[0].x_stream
+        if energyloss == True:
+            data[0].x_stream = MASTER_mono-data[0].x_stream
+        else:
+            data[0].x_stream = energyloss-data[0].x_stream
 
     return data
 
@@ -128,6 +137,7 @@ def ScanSubtraction(basedir, file, x_stream, y_stream, *args, norm=False, is_XAS
         # Define the first scan (addition of scans as master)
         MASTER_x_stream = minuend[0].x_stream
         MASTER_y_stream = minuend[0].y_stream
+        MASTER_mono = np.average(v.mono_energy)
         name = f"{args[0]}-{args[1]}"
 
         # Ensure same spectrometer energy scale between scans
@@ -137,6 +147,10 @@ def ScanSubtraction(basedir, file, x_stream, y_stream, *args, norm=False, is_XAS
                     "Cannot subtract emission spectra with different energy scales.")
             else:
                 MASTER_y_stream -= subtrahend[0].y_stream
+
+            if MASTER_mono > 0.1+ np.average(v.mono_energy) or MASTER_mono < np.average(v.mono_energy) - 0.1:
+                warnings.warn("Changed average mono energy by more than 0.1 eV.")
+
         else:
             # Interpolate all other data (not emission) to common x-scale.
             interp = interp1d(subtrahend[0].x_stream, subtrahend[0].y_stream,
@@ -154,6 +168,7 @@ def ScanSubtraction(basedir, file, x_stream, y_stream, *args, norm=False, is_XAS
             if i == 0:
                 MASTER_x_stream = v.x_stream
                 MASTER_y_stream = v.y_stream
+                MASTER_mono = np.average(v.mono_energy)
                 name = str(k) + '-'
             else:
                 if y_stream == 'XES' or y_stream.startswith('rXES'):
@@ -162,6 +177,10 @@ def ScanSubtraction(basedir, file, x_stream, y_stream, *args, norm=False, is_XAS
                             "Cannot subtract emission spectra with different energy scales.")
                     else:
                         MASTER_y_stream -= v.y_stream
+
+                    if MASTER_mono > 0.1+ np.average(v.mono_energy) or MASTER_mono < np.average(v.mono_energy) - 0.1:
+                        warnings.warn("Changed average mono energy by more than 0.1 eV.")
+
                 else:
                     interp = interp1d(v.x_stream, v.y_stream,
                                     fill_value='extrapolate')(MASTER_x_stream)
@@ -204,6 +223,9 @@ def ScanSubtraction(basedir, file, x_stream, y_stream, *args, norm=False, is_XAS
 
     # Convert emission energy to energy loss scale if requested.
     if energyloss!=None:
-        data[0].x_stream = energyloss-data[0].x_stream
+        if energyloss == True:
+            data[0].x_stream = MASTER_mono-data[0].x_stream
+        else:
+            data[0].x_stream = energyloss-data[0].x_stream
 
     return data
