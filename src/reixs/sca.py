@@ -8,7 +8,7 @@ import numpy as np
 from .parser import math_stream
 
 
-def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, energyloss=None, grid_x=[None, None, None], savgol=None, binsize=None):
+def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, energyloss=None, grid_x=[None, None, None], savgol=None, binsize=None, legend_items={}):
     """Internal function to load MCA data
     
         Parameters
@@ -219,6 +219,12 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
 
         # Assign the calculated result to the x_stream of the object in data dict
         data[arg].x_stream = math_stream(x_stream, data, arg, get_x_data)
+
+        # Get legend items
+        try:
+            data[arg].legend = legend_items[arg]
+        except:
+            data[arg].legend = f"S{arg}_{y_stream}"
 
         #Bin the data if requested
         if binsize != None:

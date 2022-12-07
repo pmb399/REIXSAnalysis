@@ -251,7 +251,7 @@ class Load1d:
                 plot_data['y_name'].append(self.type[i])
                 plot_data['filename'].append(self.filename[i])
                 plot_data['scan'].append(v.scan)
-                plot_data['legend'].append(f"S{v.scan}_{self.type[i]}")
+                plot_data['legend'].append(v.legend)
 
         # Get the colours for the glyphs.
         numlines = len(plot_data['scan'])

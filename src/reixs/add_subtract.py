@@ -4,7 +4,7 @@ from .sca import loadSCAscans
 from .simplemath import apply_offset, apply_savgol
 import warnings
 
-def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None,energyloss=None,grid_x=[None,None,None],savgol=None,binsize=None):
+def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None,energyloss=None,grid_x=[None,None,None],savgol=None,binsize=None,legend_item=None):
     """Internal function to handle scan addition.
 
         Parameters
@@ -71,6 +71,12 @@ def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False,
     data[0].y_stream = MASTER_y_stream
     data[0].scan = name
 
+    # Get legend items
+    if legend_item != None:
+        data[0].legend = legend_item
+    else:
+        data[0].legend = f"S{name}_{y_stream}"
+
     # Normalize data to [0,1]
     if norm == True:
         data[0].y_stream = np.interp(
@@ -107,7 +113,7 @@ def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False,
     return data
 
 
-def ScanSubtraction(basedir, file, x_stream, y_stream, *args, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None,energyloss=None,grid_x=[None,None,None], savgol=None,binsize=None):
+def ScanSubtraction(basedir, file, x_stream, y_stream, *args, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None,energyloss=None,grid_x=[None,None,None], savgol=None,binsize=None, legend_item=None):
     """Internal function to handle scan subtraction.
         New: May handle subtraction from two lists (addition within lists)
 
@@ -194,6 +200,12 @@ def ScanSubtraction(basedir, file, x_stream, y_stream, *args, norm=False, is_XAS
     data[0].x_stream = MASTER_x_stream
     data[0].y_stream = MASTER_y_stream
     data[0].scan = name
+
+    # Get legend items
+    if legend_item != None:
+        data[0].legend = legend_item
+    else:
+        data[0].legend = f"S{name}_{y_stream}"
 
     # Normalize to [0,1]
     if norm == True:

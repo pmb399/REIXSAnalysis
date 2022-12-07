@@ -124,6 +124,8 @@ sca.exporter() # Exports the data by calling an exporter widget
 - _savgol_ (Takes a list with two or three arguments to apply data smoothing and derivatives)
   e.g. savgol = [Window length, Polynomial order, deriavtive] as specified in the scipy Savitzky-Golay filter
 - _binsize_ (int, allows to perform data binning to improve Signal-to-Noise)
+- _legend_items_ (dict={scan_number:"name"}, overwrites generic legend names; works for the _load_ method)
+- _legend_item_ (str, overwrites generic legend name in the _add_/_subtract_ method)
 
 #### Absorption Scans
 
