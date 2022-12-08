@@ -229,7 +229,7 @@ class Load1d:
         """
         self.plot_labels.append([pos_x,pos_y,text,kwargs])
 
-    def plot(self, linewidth=4, title=None, xlabel=None, ylabel=None):
+    def plot(self, linewidth=4, title=None, xlabel=None, ylabel=None, plot_height=450, plot_width=700):
         """
         Plot all data assosciated with class instance/object.
 
@@ -260,7 +260,7 @@ class Load1d:
         source = ColumnDataSource(plot_data)
 
         # Set up the bokeh plot
-        p = figure(plot_height=450,plot_width=700,
+        p = figure(height=plot_height,width=plot_width,
                    tools="pan,wheel_zoom,box_zoom,reset,crosshair,save")
         p.multi_line(xs='x_stream', ys='y_stream', legend_group="legend",
                      line_width=linewidth, line_color='color', line_alpha=0.6,
@@ -659,7 +659,7 @@ class Load2d:
         """
         self.plot_labels.append([pos_x,pos_y,text,kwargs])
 
-    def plot(self):
+    def plot(self,title=None, xlabel=None, ylabel=None, plot_height=600, plot_width=600):
         """Plot all data assosciated with class instance/object."""
 
         # Iterate over the one (1) scan in object - this is for legacy reason and shall be removed in the future.
@@ -667,7 +667,7 @@ class Load2d:
             for k, v in val.items():
 
                 # Create the figure
-                p = figure(tooltips=[("x", "$x"), ("y", "$y"), ("value", "@image")],
+                p = figure(height=plot_height,width=plot_width,tooltips=[("x", "$x"), ("y", "$y"), ("value", "@image")],
                            tools="pan,wheel_zoom,box_zoom,reset,hover,crosshair,save")
                 p.x_range.range_padding = p.y_range.range_padding = 0
 
@@ -716,10 +716,20 @@ class Load2d:
                         label = Label(x=label_props[0],y=label_props[1],text=label_props[2],**label_props[3])
                         p.add_layout(label)
 
+            if title != None:
+                p.title.text = str(title)
+            else:
                 p.title.text = f'{self.detector[i]} Image for Scan {k}'
-                p.toolbar.logo = None
+            if xlabel != None:
+                p.xaxis.axis_label = str(xlabel)
+            else:
                 p.xaxis.axis_label = str(self.x_stream[i])
+            if ylabel != None:
+                p.yaxis.axis_label = str(ylabel)
+            else:
                 p.yaxis.axis_label = f"{self.y_stream[i]}"
+
+                p.toolbar.logo = None
 
                 show(p)
 
@@ -868,12 +878,12 @@ class LoadMesh:
         self.z_stream.append(z_stream)
         self.filename.append(file)
 
-    def plot(self):
+    def plot(self,title=None, xlabel=None, ylabel=None, plot_height=600, plot_width=600):
 
         for i, val in enumerate(self.data):
             for k, v in val.items():
 
-                p = figure(tooltips=[("x", "$x"), ("y", "$y"), ("value", "@image")],
+                p = figure(height=plot_height,width=plot_width,tooltips=[("x", "$x"), ("y", "$y"), ("value", "@image")],
                            tools="pan,wheel_zoom,box_zoom,reset,hover,crosshair,save")
                 p.x_range.range_padding = p.y_range.range_padding = 0
 
@@ -895,10 +905,20 @@ class LoadMesh:
                                      title='Counts')
                 p.add_layout(color_bar, 'right')
 
-                p.title.text = f'{self.z_stream[i]} Histogram for Scan {k}'
                 p.toolbar.logo = None
-                p.xaxis.axis_label = str(self.x_stream[i])
-                p.yaxis.axis_label = f"{self.y_stream[i]}"
+
+                if title != None:
+                    p.title.text = str(title)
+                else:
+                    p.title.text = f'{self.z_stream[i]} Histogram for Scan {k}'
+                if xlabel != None:
+                    p.xaxis.axis_label = str(xlabel)
+                else:
+                    p.xaxis.axis_label = str(self.x_stream[i])
+                if ylabel != None:
+                    p.yaxis.axis_label = str(ylabel)
+                else:                
+                    p.yaxis.axis_label = f"{self.y_stream[i]}"
 
                 show(p)
 
@@ -975,6 +995,12 @@ class ImageROILoader():
         self.data = list()
         self.filename = list()
         self.norm = list()
+        self.plot_lim_x = [":",":"]
+        self.plot_lim_y = [":",":"]
+        self.legend_loc = 'outside'
+        self.plot_vlines = list()
+        self.plot_hlines = list()
+        self.plot_labels = list()
 
     def load(self, basedir, file, images, axis, *args, x=[None, None], y=[None, None], norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, deriv=None):
         self.data.append(loadRSXS1dROIscans(basedir, file, images, axis, *args, x=x, y=y,
@@ -982,7 +1008,80 @@ class ImageROILoader():
         self.norm.append(norm)
         self.filename.append(file)
 
-    def plot(self, linewidth=4, title='Image ROI', xlabel=None, ylabel='Counts (arb. units)'):
+    def xlim(self,lower,upper):
+        """
+        Set x-axis plot window limits.
+
+        Parameters
+        ----------
+        lower : float
+        upper : float
+        """
+        self.plot_lim_x[0] = lower
+        self.plot_lim_x[1] = upper
+
+    def ylim(self,lower,upper):
+        """
+        Set y-axis plot window limits.
+
+        Parameters
+        ----------
+        lower : float
+        upper : float
+        """
+        self.plot_lim_y[0] = lower
+        self.plot_lim_y[1] = upper
+
+    def plot_legend(self,pos):
+        """
+        Overwrite default legend position.
+
+        Parameters
+        ----------
+        pos : string
+            See bokeh manual for available options.
+        """
+        self.legend_loc = pos
+
+    def vline(self,pos,**kwargs):
+        """
+        Draw a vertical line in the plot.
+
+        Parameters
+        ----------
+        pos : float
+        **kwargs : dict, optional
+            See bokeh manual for available options.
+        """
+        self.plot_vlines.append([pos,kwargs])
+    
+    def hline(self,pos,**kwargs):
+        """
+        Draw a horizontal line in the plot.
+
+        Parameters
+        ----------
+        pos : float
+        **kwargs : dict, optional
+            See bokeh manual for available options.
+        """
+        self.plot_hlines.append([pos,kwargs])
+
+    def label(self,pos_x,pos_y,text,**kwargs):
+        """
+        Draw a text box in the plot.
+
+        Parameters
+        ----------
+        pos_x : float
+        pos_y : float
+        text : string
+        **kwargs : dict, optional
+            See bokeh manual for available options.
+        """
+        self.plot_labels.append([pos_x,pos_y,text,kwargs])
+
+    def plot(self, linewidth=4, title='Image ROI', xlabel=None, ylabel='Counts (arb. units)', plot_height=450, plot_width=700):
         plot_data = defaultdict(list)
         for i, val in enumerate(self.data):
             for k, v in val.items():
@@ -1001,7 +1100,7 @@ class ImageROILoader():
 
         source = ColumnDataSource(plot_data)
 
-        p = figure(plot_height=400,
+        p = figure(height=plot_height,width=plot_width,
                    tools="pan,wheel_zoom,box_zoom,reset,crosshair,save")
         p.multi_line(xs='x_stream', ys='y_stream', legend_group="legend",
                      line_width=linewidth, line_color='color', line_alpha=0.6,
@@ -1015,6 +1114,37 @@ class ImageROILoader():
             ("(x,y)", "(@x_name, @y_name)"),
             ("(x,y)", "($x, $y)")
         ]))
+
+        # Overwrite plot properties if requested.
+        if self.legend_loc == 'outside':
+            p.add_layout(p.legend[0], 'right')
+        else:
+            p.legend.location = self.legend_loc
+
+        if self.plot_lim_y[0] != ':':
+            p.y_range.start = self.plot_lim_y[0]
+        if self.plot_lim_y[1] != ':':
+            p.y_range.end = self.plot_lim_y[1]
+
+        if self.plot_lim_x[0] != ':':
+            p.x_range.start = self.plot_lim_x[0]
+        if self.plot_lim_x[1] != ':':
+            p.x_range.end = self.plot_lim_x[1]
+
+        if len(self.plot_hlines)>0:
+            for line_props in self.plot_hlines:
+                line = Span(location=line_props[0],dimension='width',**line_props[1])
+                p.add_layout(line)
+
+        if len(self.plot_vlines)>0:
+            for line_props in self.plot_vlines:
+                line = Span(location=line_props[0],dimension='height',**line_props[1])
+                p.add_layout(line)
+
+        if len(self.plot_labels)>0:
+            for label_props in self.plot_labels:
+                label = Label(x=label_props[0],y=label_props[1],text=label_props[2],**label_props[3])
+                p.add_layout(label)
 
         p.toolbar.logo = None
 
@@ -1098,6 +1228,11 @@ class StackROILoader():
         self.data = list()
         self.filename = list()
         self.norm = list()
+        self.plot_lim_x = [":",":"]
+        self.plot_lim_y = [":",":"]
+        self.plot_vlines = list()
+        self.plot_hlines = list()
+        self.plot_labels = list()
 
     def load(self, basedir, file, axis, *args, x=[None, None], y=[None, None], norm=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None):
         self.data.append(loadRSXS2dROIscans(basedir, file, axis, *args, x=x, y=y, norm=norm,
@@ -1105,11 +1240,73 @@ class StackROILoader():
         self.norm.append(norm)
         self.filename.append(file)
 
-    def plot(self):
+    def xlim(self,lower,upper):
+        """
+        Set x-axis plot window limits.
+
+        Parameters
+        ----------
+        lower : float
+        upper : float
+        """
+        self.plot_lim_x[0] = lower
+        self.plot_lim_x[1] = upper
+
+    def ylim(self,lower,upper):
+        """
+        Set y-axis plot window limits.
+
+        Parameters
+        ----------
+        lower : float
+        upper : float
+        """
+        self.plot_lim_y[0] = lower
+        self.plot_lim_y[1] = upper
+
+    def vline(self,pos,**kwargs):
+        """
+        Draw a vertical line in the plot.
+
+        Parameters
+        ----------
+        pos : float
+        **kwargs : dict, optional
+            See bokeh manual for available options.
+        """
+        self.plot_vlines.append([pos,kwargs])
+    
+    def hline(self,pos,**kwargs):
+        """
+        Draw a horizontal line in the plot.
+
+        Parameters
+        ----------
+        pos : float
+        **kwargs : dict, optional
+            See bokeh manual for available options.
+        """
+        self.plot_hlines.append([pos,kwargs])
+
+    def label(self,pos_x,pos_y,text,**kwargs):
+        """
+        Draw a text box in the plot.
+
+        Parameters
+        ----------
+        pos_x : float
+        pos_y : float
+        text : string
+        **kwargs : dict, optional
+            See bokeh manual for available options.
+        """
+        self.plot_labels.append([pos_x,pos_y,text,kwargs])
+        
+    def plot(self, title=None, xlabel=None, ylabel=None, plot_height=600, plot_width=600):
         for i, val in enumerate(self.data):
             for k, v in val.items():
 
-                p = figure(tooltips=[("x", "$x"), ("y", "$y"), ("value", "@image")],
+                p = figure(height=plot_height,width=plot_width,tooltips=[("x", "$x"), ("y", "$y"), ("value", "@image")],
                            tools="pan,wheel_zoom,box_zoom,reset,hover,crosshair,save")
                 p.x_range.range_padding = p.y_range.range_padding = 0
 
@@ -1127,10 +1324,46 @@ class StackROILoader():
                                      title='Counts')
                 p.add_layout(color_bar, 'right')
 
+                # Overwrite plot properties if selected.
+                if self.plot_lim_y[0] != ':':
+                    p.y_range.start = self.plot_lim_y[0]
+                if self.plot_lim_y[1] != ':':
+                    p.y_range.end = self.plot_lim_y[1]
+
+                if self.plot_lim_x[0] != ':':
+                    p.x_range.start = self.plot_lim_x[0]
+                if self.plot_lim_x[1] != ':':
+                    p.x_range.end = self.plot_lim_x[1]
+
+                if len(self.plot_hlines)>0:
+                    for line_props in self.plot_hlines:
+                        line = Span(location=line_props[0],dimension='width',**line_props[1])
+                        p.add_layout(line)
+
+                if len(self.plot_vlines)>0:
+                    for line_props in self.plot_vlines:
+                        line = Span(location=line_props[0],dimension='height',**line_props[1])
+                        p.add_layout(line)
+
+                if len(self.plot_labels)>0:
+                    for label_props in self.plot_labels:
+                        label = Label(x=label_props[0],y=label_props[1],text=label_props[2],**label_props[3])
+                        p.add_layout(label)
+
+            if title != None:
+                p.title.text = str(title)
+            else:
                 p.title.text = f'Image Stack ROI for Scan {k}'
-                p.toolbar.logo = None
+            if xlabel != None:
+                p.xaxis.axis_label = str(xlabel)
+            else:
                 p.xaxis.axis_label = v.caxis_labels[0]
+            if ylabel != None:
+                p.yaxis.axis_label = str(ylabel)
+            else:
                 p.yaxis.axis_label = v.caxis_labels[1]
+
+                p.toolbar.logo = None
 
                 show(p)
 
@@ -1210,7 +1443,7 @@ class ImageStackLoader():
             self.data.append(loadRSXSImageStack(basedir, file, arg))
             self.filename.append(file)
 
-    def plot(self):
+    def plot(self, title=None, xlabel=None, ylabel=None, plot_height=600, plot_width=600):
         def update(f=0):
             r.data_source.data['image'] = [v.imagemca[f]]
             r.data_source.data['x'] = [v.x_min[f]]
@@ -1222,7 +1455,7 @@ class ImageStackLoader():
 
         for i, val in enumerate(self.data):
             for k, v in val.items():
-                p = figure(tooltips=[("x", "$x"), ("y", "$y"), ("value", "@image")],
+                p = figure(height=plot_height,width=plot_width,tooltips=[("x", "$x"), ("y", "$y"), ("value", "@image")],
                            tools="pan,wheel_zoom,box_zoom,reset,hover,crosshair,save")
                 p.x_range.range_padding = p.y_range.range_padding = 0
 
@@ -1243,10 +1476,20 @@ class ImageStackLoader():
                                      title='Counts')
                 p.add_layout(color_bar, 'right')
 
-                p.title.text = f'Image Movie for Scan {k}'
                 p.toolbar.logo = None
-                p.xaxis.axis_label = v.mcpRSXS_axes[0]
-                p.yaxis.axis_label = v.mcpRSXS_axes[1]
+
+                if title != None:
+                    p.title.text = str(title)
+                else:
+                    p.title.text = f'Image Movie for Scan {k}'
+                if xlabel != None:
+                    p.xaxis.axis_label = str(xlabel)
+                else:
+                    p.xaxis.axis_label = v.mcpRSXS_axes[0]
+                if ylabel != None:
+                    p.yaxis.axis_label = str(ylabel)
+                else:
+                    p.yaxis.axis_label = v.mcpRSXS_axes[1]
 
                 s = show(p, notebook_handle=True)
                 display(widgets.interact(update, f=(0, len(v.imagemca)-1)))
