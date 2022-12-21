@@ -23,11 +23,20 @@ def XEOL_background_removal(data, arg, REIXSobj, background_scan=None):
             background_data = REIXSobj.Scan(background_scan).xeol_data
         else:
             raise TypeError("Background Scan undefined.")
-        # 1 Sum the background
-        background_sum = background_data.sum(axis=0)
+        
+        ## If the background data has not been pre-procssed before or if only one frame was collected
+        if background_data.ndim > 1:
+            # 1 Sum the background
+            background_sum = background_data.sum(axis=0)
 
-        # 2 Normalize to average background frame
-        background_spec = np.true_divide(background_sum, len(background_data))
+            # 2 Normalize to average background frame
+            background_spec = np.true_divide(background_sum, len(background_data))
+
+        elif background_data.ndim == 1:
+            background_spec = background_data
+
+        else:
+            raise TypeError("Background Scan has the wrong format")
 
         # 3 Subtract the background from the actual spectrum
         xeol_data = data[arg].xeol_data

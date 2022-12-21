@@ -124,9 +124,9 @@ class REIXS_HDF5(object):
                         warnings.warn("Could not load SDD data / SDD energy scale")
 
                     try:
-                        my.xeol_data = np.array(f[f'{my.scan}/{self.REIXSconfig["HDF5_xeol_data"]}'])
+                        my.xeol_data = np.array(f[f'{my.scan}/{self.REIXSconfig["HDF5_xeol_data"]}'],dtype=np.float)
                         my.xeol_energy = np.array(f[f'{my.scan}/{self.REIXSconfig["HDF5_xeol_energy"]}'])
-                        my.xeol_background = np.array(f[f'{my.scan}/{self.REIXSconfig["HDF5_xeol_background"]}'])
+                        my.xeol_background = np.array(f[f'{my.scan}/{self.REIXSconfig["HDF5_xeol_background"]}'],dtype=np.float)
 
                     except:
                         warnings.warn("Could not load XEOL data / XEOL emission scale")
