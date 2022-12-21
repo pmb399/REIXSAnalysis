@@ -18,8 +18,10 @@ def apply_offset(stream, offset=None, coffset=None):
     # Do the polynomial fitting with deg = len(list)-1
     if offset != None:
         offsetarray = np.array(offset)
+        # Limit the applicable shift to be quadratic or of lower order
+        deg = min(2,len(offsetarray)-1)
         coeff = np.polyfit(
-            offsetarray[:, 0], offsetarray[:, 1], deg=len(offsetarray)-1)
+            offsetarray[:, 0], offsetarray[:, 1], deg=deg)
 
         # Make sure that constant shift is applied if only one tuple provided (handled as offset)
         if len(coeff) == 1:
