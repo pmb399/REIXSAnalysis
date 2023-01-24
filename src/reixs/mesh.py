@@ -116,7 +116,7 @@ def loadMeshScans(basedir, file, x_stream, y_stream, z_stream, *args, norm=True,
         try:
             return np.array(data[arg].sca_data[stream])
         except:
-            return np.array(data[arg].sca_data[data[arg].mnemonic2name[stream]])
+            raise UserWarning("Stream not defined. Only mnemonics supported!")
 
     def get_x_data(x_stream, data, arg, background, REIXSObj):
         # Get the x-data.

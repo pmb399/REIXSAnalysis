@@ -4,6 +4,7 @@ from .util import doesMatchPattern
 from numpy import log as ln
 from numpy import log10 as log
 from numpy import exp
+from numpy import max, min
 
 
 def math_stream(formula, data, arg, get_data, XAS_streams=None, is_XAS=False, background=None, REIXSObj=None):
@@ -26,7 +27,7 @@ def math_stream(formula, data, arg, get_data, XAS_streams=None, is_XAS=False, ba
                 float(string) # Check if string is float
             except:
                 # Use math expressions to allow logs and exps
-                math_expressions = ['ln', 'log', 'exp']
+                math_expressions = ['ln', 'log', 'exp','max','min']
 
                 if string in math_expressions:
                     pass

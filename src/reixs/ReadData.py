@@ -143,7 +143,8 @@ class REIXS_HDF5(object):
                     my.sca_data = pd.DataFrame()
                     try:
                         for entry in f[f'{my.scan}/{self.REIXSconfig["HDF5_sca_data"]}']:
-                            my.sca_data[str(entry)] = np.array(
+                            if len(f[f'{my.scan}/{self.REIXSconfig["HDF5_sca_data"]}/{entry}'].shape) == 1 and len(f[f'{my.scan}/{self.REIXSconfig["HDF5_sca_data"]}/{entry}']) == len(f[f'{my.scan}/{self.REIXSconfig["HDF5_sca_data"]}/epoch']) :
+                                my.sca_data[str(entry)] = np.array(
                                 f[f'{my.scan}/{self.REIXSconfig["HDF5_sca_data"]}/{entry}'])
                     except:
                         warnings.warn("Could not load SCAs from HDF5 container.")
@@ -333,8 +334,10 @@ class REIXS_ASCII(object):
         self.scanNumbers = []
         self.scanType = []
         self.scanMotor = []
-        self.mnemonics = []
-        self.full_names = []
+        self.mnemonics_motors = []
+        self.full_names_motors = []
+        self.mnemonics_counters = []
+        self.full_names_counters = []
 
         try:
             full_path_for_header_file = os.path.join(baseName, header_file)
@@ -368,15 +371,25 @@ class REIXS_ASCII(object):
 
                 # Use this to generate mnemonic/long name dict
                 elif line.startswith('#J'):
-                    plist = line.strip("\n").split()
-                    plist.pop(0)
-                    self.full_names += plist
+                    plist0 = line.strip().split(" ",1)
+                    plist = plist0[1].split("  ")
+                    self.full_names_counters += plist
+
+                elif line.startswith('#O'):
+                    plist0 = line.strip().split(" ",1)
+                    plist = plist0[1].split("  ")
+                    self.full_names_motors += plist
 
                 # Use this to generate mnemonic/long name dict
                 elif line.startswith('#j'):
-                    plist = line.strip("\n").split()
-                    plist.pop(0)
-                    self.mnemonics += plist
+                    plist0 = line.strip().split(" ",1)
+                    plist = plist0[1].split(" ")
+                    self.mnemonics_counters += plist
+
+                elif line.startswith('#o'):
+                    plist0 = line.strip().split(" ",1)
+                    plist = plist0[1].split(" ")
+                    self.mnemonics_motors += plist
 
                 # Ignore empty spaces or commented lines
                 elif line.startswith('#') or line.startswith('\n'):
@@ -524,10 +537,14 @@ class REIXS_ASCII(object):
             print("Last Scan Number", self.scanNumbers[-1])
             print("Scans in File", len(self.scanNumbers))
 
-        if len(self.mnemonics) != len(self.full_names):
-            print("Mismatch with nmemonic to full name dictionary.")
+        if len(self.mnemonics_motors) != len(self.full_names_motors):
+            raise UserWarning("Mismatch with nmemonic to full name dictionary (motors).")
 
-        self.mnemonic2name = dict(zip(self.mnemonics, self.full_names))
+        if len(self.mnemonics_counters) != len(self.full_names_counters):
+            raise UserWarning("Mismatch with nmemonic to full name dictionary (counters).")
+
+        self.mnemonic2name_motors = dict(zip(self.full_names_motors,self.mnemonics_motors))
+        self.mnemonic2name_counters = dict(zip(self.full_names_counters,self.mnemonics_counters))
 
         # Create dictionary for scan numbers
         # This is in case a detector was disabled for a specific scan,
@@ -597,12 +614,6 @@ class REIXS_ASCII(object):
                 raise ValueError("Scan not defined in header file.")
 
             try:
-                my.mnemonic2name = self.mnemonic2name
-            except:
-                warnings.warn(
-                    "Problem with SCA mnemonic legacy support. Use full names inestead.")
-
-            try:
                 my.scansdd = self.scanIndexDictSDD[scan]
                 my.SDD = True
             except:
@@ -632,9 +643,28 @@ class REIXS_ASCII(object):
                 self.datasets[my.scanl][1:]).iloc[:, 0].str.split(" ", expand=True)
             header = pd.DataFrame(self.datasets[my.scanl]).iloc[0].str.split(
                 "  ", expand=True).transpose()
-            my.sca_data.columns = header[0]
+            header_list = [i for i in header[0]]
+            epoch_index = header_list.index('Epoch')
+
+            mnemonics_header = list()
+            # Do the motors first
+            for entry in header_list[0:epoch_index]:
+                mnemonics_header.append(self.mnemonic2name_motors[entry])
+            # Now append Epoch
+            mnemonics_header.append("Epoch")
+            # Do the counters last
+            for entry in header_list[epoch_index+1:]:
+                mnemonics_header.append(self.mnemonic2name_counters[entry])
+
+            if len(header_list) != len(mnemonics_header):
+                warnings.warn("Problem in converting long names to mnemonics in header file.")
+
+            my.sca_data.columns = mnemonics_header
             # Ensures data type integrity
             my.sca_data = my.sca_data.apply(pd.to_numeric, errors='coerce')
+
+            # Remove duplicate columns
+            my.sca_data = my.sca_data.loc[:,~my.sca_data.columns.duplicated()].copy()
 
             # Defines special streams
             # Added legacy support for previous spec variables
@@ -643,48 +673,27 @@ class REIXS_ASCII(object):
             except:
                 ## We leave this in for legacy support
                 try:
-                    my.mono_energy = np.array(my.sca_data["Mono_Engy"])
+                    my.mono_energy = np.array(my.sca_data["beam"])
                 except:
-                    try:
-                        my.mono_energy = np.array(my.sca_data["Beam Engy"])
-                    except:
-                        try:
-                            my.mono_energy = np.array(my.sca_data["Mono Ener"])
-                        except:
-                            try:
-                                my.mono_energy = np.array(my.sca_data["BeamEngy"])
-                            except:
-                                raise TypeError("Problem determining energy.")
+                    raise TypeError("Problem determining energy.")
 
             try:
                 my.mesh_current = np.array(my.sca_data[self.REIXSconfig["ASCII_mesh_current"]])
             except:
                 ## Leave this in for legacy support
                 try:
-                    my.mesh_current = np.array(my.sca_data["Mesh"])
+                    my.mesh_current = np.array(my.sca_data["i0"])
                 except:
-                    try:
-                        my.mesh_current = np.array(my.sca_data["Mesh Curr"])
-                    except:
-                        try:
-                            my.mesh_current = np.array(my.sca_data["I0_BD3"])
-                        except:
-                            raise TypeError("Problem determening mesh current")
+                    raise TypeError("Problem determening mesh current")
 
             try:
                 my.sample_current = np.array(my.sca_data[self.REIXSconfig["ASCII_sample_current"]])
             except:
                 ## Also leave this in for legacy support
                 try:
-                    my.sample_current = np.array(my.sca_data["Sample"])
+                    my.sample_current = np.array(my.sca_data["tey"])
                 except:
-                    try:
-                        my.sample_current = np.array(my.sca_data["Samp Curr"])
-                    except:
-                        try:
-                            my.sample_current = np.array(my.sca_data["TEY"])
-                        except:
-                            raise TypeError("Problem determening sample current.")
+                    raise TypeError("Problem determening sample current.")
 
             # Define total electron yield normalized by flux
             try:

@@ -30,9 +30,9 @@ def get_REIXSconfig():
         REIXSconfig["HDF5_xeol_background"] = 'Endstation/Detectors/XEOL/xeolMCA_back'
         REIXSconfig["HDF5_mcp_data"] = 'Data/mcpMCA'
         REIXSconfig["HDF5_mcp_energy"] = 'Data/mcpMCA_scale'
-        REIXSconfig["HDF5_sca_data"] = 'Endstation/Counters'
+        REIXSconfig["HDF5_sca_data"] = 'Data'
 
-        REIXSconfig["ASCII_mono_energy"] = 'Mono_Engy'
-        REIXSconfig["ASCII_mesh_current"] = 'Mesh'
-        REIXSconfig["ASCII_sample_current"] = 'Sample'
+        REIXSconfig["ASCII_mono_energy"] = 'beam'
+        REIXSconfig["ASCII_mesh_current"] = 'i0'
+        REIXSconfig["ASCII_sample_current"] = 'tey'
         return REIXSconfig

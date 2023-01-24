@@ -178,7 +178,7 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
         try:
             return np.array(data[arg].sca_data[stream])
         except:
-            return np.array(data[arg].sca_data[data[arg].mnemonic2name[stream]])
+            raise UserWarning("Stream not defined. Only mnemonics supported!")
 
     # Load the x data stream
     def get_x_data(x_stream, data, arg, background, REIXSObj):
@@ -199,7 +199,7 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
         elif x_stream == "XEOL Energy":
             return data[arg].xeol_energy
 
-        # May also plot agains index
+        # May also plot against index
         elif x_stream == "Points":
             return np.array(range(0, len(data[arg].y_stream)), dtype=int)
 
