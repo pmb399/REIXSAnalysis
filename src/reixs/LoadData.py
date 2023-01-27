@@ -729,9 +729,9 @@ class Load2d:
             else:
                 p.yaxis.axis_label = f"{self.y_stream[i]}"
 
-                p.toolbar.logo = None
+            p.toolbar.logo = None
 
-                show(p)
+            show(p)
 
     def get_data(self):
         """Make data available in memory as exported to file.
@@ -1363,9 +1363,9 @@ class StackROILoader():
             else:
                 p.yaxis.axis_label = v.caxis_labels[1]
 
-                p.toolbar.logo = None
+            p.toolbar.logo = None
 
-                show(p)
+            show(p)
 
     def get_data(self):
         f = io.StringIO()
