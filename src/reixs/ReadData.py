@@ -46,7 +46,8 @@ def REIXS(baseName, header_file):
         return REIXS_HDF5(baseName, header_file, REIXSconfig, handle_exception)
     else:
         return REIXS_HDF5(baseName, str(header_file)+".h5", REIXSconfig, handle_exception)
-        
+
+
 class REIXS_HDF5(object):
     """REIXS data object  HDF5
 
@@ -59,6 +60,7 @@ class REIXS_HDF5(object):
         REIXSconfig : dict
             Spec paramter to python variable dict
     """
+
     def __init__(self, baseName, header_file, REIXSconfig, handle_exception):
         try:
             self.file = os.path.join(baseName, header_file)
@@ -70,7 +72,7 @@ class REIXS_HDF5(object):
 
     def Scan(self, scan):
         """Load one specific scan from specified data file
-        
+
         Parameters
         ----------
         scan : int
@@ -88,7 +90,8 @@ class REIXS_HDF5(object):
                         # Create dictionary for scan numbers
                         scanIndexDictHeader = dict()
                         for k in f.keys():
-                            if k.startswith("SCAN_"): # Groups must start with the SCAN prefix
+                            # Groups must start with the SCAN prefix
+                            if k.startswith("SCAN_"):
                                 scanIndexDictHeader[int(k.split("_")[1])] = k
                         my.scan = scanIndexDictHeader[scan]
 
@@ -97,17 +100,20 @@ class REIXS_HDF5(object):
 
                     # Define selected special streams and detectors
                     try:
-                        my.mono_energy = np.array(f[f'{my.scan}/{self.REIXSconfig["HDF5_mono_energy"]}'])
+                        my.mono_energy = np.array(
+                            f[f'{my.scan}/{self.REIXSconfig["HDF5_mono_energy"]}'])
                     except:
                         raise UserWarning("Problem detecting energy.")
 
                     try:
-                        my.mesh_current = np.array(f[f'{my.scan}/{self.REIXSconfig["HDF5_mesh_current"]}'])
+                        my.mesh_current = np.array(
+                            f[f'{my.scan}/{self.REIXSconfig["HDF5_mesh_current"]}'])
                     except:
                         raise UserWarning("Problem detecting mesh current.")
 
                     try:
-                        my.sample_current = np.array(f[f'{my.scan}/{self.REIXSconfig["HDF5_sample_current"]}'])
+                        my.sample_current = np.array(
+                            f[f'{my.scan}/{self.REIXSconfig["HDF5_sample_current"]}'])
                     except:
                         raise UserWarning("Problem detecting sample current.")
 
@@ -117,19 +123,25 @@ class REIXS_HDF5(object):
                         raise ValueError("Problem calculating TEY.")
 
                     try:
-                        my.sdd_data = np.array(f[f'{my.scan}/{self.REIXSconfig["HDF5_sdd_data"]}'])
+                        my.sdd_data = np.array(
+                            f[f'{my.scan}/{self.REIXSconfig["HDF5_sdd_data"]}'])
                         my.sdd_energy = np.array(
                             f[f'{my.scan}/{self.REIXSconfig["HDF5_sdd_energy"]}'])
                     except:
-                        warnings.warn("Could not load SDD data / SDD energy scale")
+                        warnings.warn(
+                            "Could not load SDD data / SDD energy scale")
 
                     try:
-                        my.xeol_data = np.array(f[f'{my.scan}/{self.REIXSconfig["HDF5_xeol_data"]}'],dtype=np.float)
-                        my.xeol_energy = np.array(f[f'{my.scan}/{self.REIXSconfig["HDF5_xeol_energy"]}'])
-                        my.xeol_background = np.array(f[f'{my.scan}/{self.REIXSconfig["HDF5_xeol_background"]}'],dtype=np.float)
+                        my.xeol_data = np.array(
+                            f[f'{my.scan}/{self.REIXSconfig["HDF5_xeol_data"]}'], dtype=np.float)
+                        my.xeol_energy = np.array(
+                            f[f'{my.scan}/{self.REIXSconfig["HDF5_xeol_energy"]}'])
+                        my.xeol_background = np.array(
+                            f[f'{my.scan}/{self.REIXSconfig["HDF5_xeol_background"]}'], dtype=np.float)
 
                     except:
-                        warnings.warn("Could not load XEOL data / XEOL emission scale")
+                        warnings.warn(
+                            "Could not load XEOL data / XEOL emission scale")
 
                     try:
                         my.mcp_data = np.transpose(
@@ -137,21 +149,23 @@ class REIXS_HDF5(object):
                         my.mcp_energy = np.array(
                             f[f'{my.scan}/{self.REIXSconfig["HDF5_mcp_energy"]}'])
                     except:
-                        warnings.warn("Could not load MCP data / MCP energy scale")
+                        warnings.warn(
+                            "Could not load MCP data / MCP energy scale")
 
                     # Populate a pandas dataframe with all SCA data
                     my.sca_data = pd.DataFrame()
                     try:
                         for entry in f[f'{my.scan}/{self.REIXSconfig["HDF5_sca_data"]}']:
-                            if len(f[f'{my.scan}/{self.REIXSconfig["HDF5_sca_data"]}/{entry}'].shape) == 1 and len(f[f'{my.scan}/{self.REIXSconfig["HDF5_sca_data"]}/{entry}']) == len(f[f'{my.scan}/{self.REIXSconfig["HDF5_sca_data"]}/epoch']) :
+                            if len(f[f'{my.scan}/{self.REIXSconfig["HDF5_sca_data"]}/{entry}'].shape) == 1 and len(f[f'{my.scan}/{self.REIXSconfig["HDF5_sca_data"]}/{entry}']) == len(f[f'{my.scan}/{self.REIXSconfig["HDF5_sca_data"]}/epoch']):
                                 my.sca_data[str(entry)] = np.array(
-                                f[f'{my.scan}/{self.REIXSconfig["HDF5_sca_data"]}/{entry}'])
+                                    f[f'{my.scan}/{self.REIXSconfig["HDF5_sca_data"]}/{entry}'])
                     except:
-                        warnings.warn("Could not load SCAs from HDF5 container.")
+                        warnings.warn(
+                            "Could not load SCAs from HDF5 container.")
 
             except OSError as e:
                 obj = self.handle_exception(e)
-                
+
                 my.scan = scan
                 my.mono_energy = obj.Scan(scan).mono_energy
                 my.mesh_current = obj.Scan(scan).mesh_current
@@ -167,7 +181,8 @@ class REIXS_HDF5(object):
                     my.xeol_energy = obj.Scan(scan).xeol_energy
                     my.xeol_background = obj.Scan(scan).xeol_background
                 except:
-                    warnings.warn("Could not load XEOL data / XEOL emission scale")
+                    warnings.warn(
+                        "Could not load XEOL data / XEOL emission scale")
                 try:
                     if obj.MCPRIXS == True:
                         my.mcp_data = obj.Scan(scan).mcp_data
@@ -192,13 +207,15 @@ class REIXS_HDF5(object):
             """Normalize the counts of the MCP by incident flux at every given datapoint.
                This is only applied to EEMs."""
 
-            my.mcp_data_norm = np.transpose(rixs_readutil.detector_norm(my.mcp_data,my.mesh_current))
+            my.mcp_data_norm = np.transpose(
+                rixs_readutil.detector_norm(my.mcp_data, my.mesh_current))
 
             return my.mcp_data_norm
 
         def SDD_norm(my):
             """Normalize the counts of the SDD by incident flux at every given datapoint."""
-            my.sdd_data_norm = rixs_readutil.detector_norm(my.sdd_data,my.mesh_current[:,None])
+            my.sdd_data_norm = rixs_readutil.detector_norm(
+                my.sdd_data, my.mesh_current[:, None])
 
             return my.sdd_data_norm
 
@@ -263,7 +280,7 @@ class REIXS_HDF5(object):
 
         def specPFY(my, mcp_lowE, mcp_highE):
             """Calculate spectrometer PFY based on ROI set.
-            
+
             Parameters
             ----------
             mcp_lowE : float
@@ -308,6 +325,38 @@ class REIXS_HDF5(object):
 
             return grid_stack(my.mcpRSXS_scales, my.RSXSMCP_norm)
 
+    def Info(self, keys):
+        """Load one specific scan from specified data file
+
+        Parameters
+        ----------
+        keys : list of key paths to the desired information
+        """
+        # Try opening hdf5 container
+        try:
+            with h5py.File(self.file, 'r') as f:
+                # Create dictionary for scan numbers
+                info_dict = dict()
+
+                if not isinstance(keys, list):
+                    keys = [keys]
+
+                for key in keys:
+                    info_dict[key] = dict()
+                    for k in f.keys():
+                        if k.startswith("SCAN_"):  # Groups must start with the SCAN prefix
+                            try:
+                                info_dict[key][int(
+                                    k.split("_")[1])] = f[f'{k}/{key}'][()].decode("utf-8")
+                            except AttributeError:
+                                info_dict[key][int(
+                                    k.split("_")[1])] = f[f'{k}/{key}'][()]
+
+        except:
+            raise KeyError("Error opening and processing file.")
+
+        return info_dict
+
 
 class REIXS_ASCII(object):
 
@@ -348,7 +397,7 @@ class REIXS_ASCII(object):
         # Open the header file and read line by line
         with open(full_path_for_header_file) as f:
             for line in f:
-                if line.startswith('#S '): # Triggers a new scan
+                if line.startswith('#S '):  # Triggers a new scan
                     # Append new scan if list is currently populated in last element (scan)
                     if self.datasets[-1] != []:
                         # we are in a new block
@@ -371,23 +420,23 @@ class REIXS_ASCII(object):
 
                 # Use this to generate mnemonic/long name dict
                 elif line.startswith('#J'):
-                    plist0 = line.strip().split(" ",1)
+                    plist0 = line.strip().split(" ", 1)
                     plist = plist0[1].split("  ")
                     self.full_names_counters += plist
 
                 elif line.startswith('#O'):
-                    plist0 = line.strip().split(" ",1)
+                    plist0 = line.strip().split(" ", 1)
                     plist = plist0[1].split("  ")
                     self.full_names_motors += plist
 
                 # Use this to generate mnemonic/long name dict
                 elif line.startswith('#j'):
-                    plist0 = line.strip().split(" ",1)
+                    plist0 = line.strip().split(" ", 1)
                     plist = plist0[1].split(" ")
                     self.mnemonics_counters += plist
 
                 elif line.startswith('#o'):
-                    plist0 = line.strip().split(" ",1)
+                    plist0 = line.strip().split(" ", 1)
                     plist = plist0[1].split(" ")
                     self.mnemonics_motors += plist
 
@@ -407,7 +456,7 @@ class REIXS_ASCII(object):
                 next(f_sdd)
                 # Read file line by line
                 for line_sdd in f_sdd:
-                    if line_sdd.startswith('#S '): # Triggers new scan
+                    if line_sdd.startswith('#S '):  # Triggers new scan
                         if self.sdd_datasets[-1] != []:
                             # we are in a new block
                             self.sdd_datasets.append([])
@@ -463,10 +512,11 @@ class REIXS_ASCII(object):
                     next(f_mcp)
                     # Read file line by line
                     for line in f_mcp:
-                        if line.startswith('#S '): # Triggers new scan
+                        if line.startswith('#S '):  # Triggers new scan
                             if self.mcpRSXS_data[-1] != []:
                                 self.mcpRSXS_data.append([])
-                            if self.mcpRSXS_scale_headers[-1] != []: # Now need to also keep track of column headers
+                            # Now need to also keep track of column headers
+                            if self.mcpRSXS_scale_headers[-1] != []:
                                 self.mcpRSXS_scale_headers.append([])
 
                             self.mcpRSXS_scanNumbers.append(
@@ -499,7 +549,7 @@ class REIXS_ASCII(object):
                 next(f_xeol)
                 # Load file line by line
                 for line_xeol in f_xeol:
-                    if line_xeol.startswith('#S '): # Triggers new scan
+                    if line_xeol.startswith('#S '):  # Triggers new scan
                         if self.xeol_datasets[-1] != []:
                             # we are in a new block
                             self.xeol_datasets.append([])
@@ -538,13 +588,17 @@ class REIXS_ASCII(object):
             print("Scans in File", len(self.scanNumbers))
 
         if len(self.mnemonics_motors) != len(self.full_names_motors):
-            raise UserWarning("Mismatch with nmemonic to full name dictionary (motors).")
+            raise UserWarning(
+                "Mismatch with nmemonic to full name dictionary (motors).")
 
         if len(self.mnemonics_counters) != len(self.full_names_counters):
-            raise UserWarning("Mismatch with nmemonic to full name dictionary (counters).")
+            raise UserWarning(
+                "Mismatch with nmemonic to full name dictionary (counters).")
 
-        self.mnemonic2name_motors = dict(zip(self.full_names_motors,self.mnemonics_motors))
-        self.mnemonic2name_counters = dict(zip(self.full_names_counters,self.mnemonics_counters))
+        self.mnemonic2name_motors = dict(
+            zip(self.full_names_motors, self.mnemonics_motors))
+        self.mnemonic2name_counters = dict(
+            zip(self.full_names_counters, self.mnemonics_counters))
 
         # Create dictionary for scan numbers
         # This is in case a detector was disabled for a specific scan,
@@ -657,39 +711,44 @@ class REIXS_ASCII(object):
                 mnemonics_header.append(self.mnemonic2name_counters[entry])
 
             if len(header_list) != len(mnemonics_header):
-                warnings.warn("Problem in converting long names to mnemonics in header file.")
+                warnings.warn(
+                    "Problem in converting long names to mnemonics in header file.")
 
             my.sca_data.columns = mnemonics_header
             # Ensures data type integrity
             my.sca_data = my.sca_data.apply(pd.to_numeric, errors='coerce')
 
             # Remove duplicate columns
-            my.sca_data = my.sca_data.loc[:,~my.sca_data.columns.duplicated()].copy()
+            my.sca_data = my.sca_data.loc[:, ~
+                                          my.sca_data.columns.duplicated()].copy()
 
             # Defines special streams
             # Added legacy support for previous spec variables
             try:
-                my.mono_energy = np.array(my.sca_data[self.REIXSconfig["ASCII_mono_energy"]])
+                my.mono_energy = np.array(
+                    my.sca_data[self.REIXSconfig["ASCII_mono_energy"]])
             except:
-                ## We leave this in for legacy support
+                # We leave this in for legacy support
                 try:
                     my.mono_energy = np.array(my.sca_data["beam"])
                 except:
                     raise TypeError("Problem determining energy.")
 
             try:
-                my.mesh_current = np.array(my.sca_data[self.REIXSconfig["ASCII_mesh_current"]])
+                my.mesh_current = np.array(
+                    my.sca_data[self.REIXSconfig["ASCII_mesh_current"]])
             except:
-                ## Leave this in for legacy support
+                # Leave this in for legacy support
                 try:
                     my.mesh_current = np.array(my.sca_data["i0"])
                 except:
                     raise TypeError("Problem determening mesh current")
 
             try:
-                my.sample_current = np.array(my.sca_data[self.REIXSconfig["ASCII_sample_current"]])
+                my.sample_current = np.array(
+                    my.sca_data[self.REIXSconfig["ASCII_sample_current"]])
             except:
-                ## Also leave this in for legacy support
+                # Also leave this in for legacy support
                 try:
                     my.sample_current = np.array(my.sca_data["tey"])
                 except:
@@ -725,7 +784,7 @@ class REIXS_ASCII(object):
                 except:
                     raise UserWarning("Could not RIXS MCP data from file.")
 
-            # Load the MCP data for RSXS endstation 
+            # Load the MCP data for RSXS endstation
             if my.MCPRSXS == True:
                 try:
                     # Keep track of scales in MCP file
