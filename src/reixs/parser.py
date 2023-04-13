@@ -1,5 +1,4 @@
 import re
-import parser
 from .util import doesMatchPattern
 from numpy import log as ln
 from numpy import log10 as log
@@ -24,19 +23,21 @@ def math_stream(formula, data, arg, get_data, XAS_streams=None, is_XAS=False, ba
     for i, string in enumerate(split_expr):
         if string != "":
             try:
-                float(string) # Check if string is float
+                float(string)  # Check if string is float
             except:
                 # Use math expressions to allow logs and exps
-                math_expressions = ['ln', 'log', 'exp','max','min']
+                math_expressions = ['ln', 'log', 'exp', 'max', 'min']
 
                 if string in math_expressions:
                     pass
 
                 else:
                     # Need to allow special case where negative numbers can be assigned in ET scan
-                    if string.endswith("ET["): # This will only be triggered if the arguments of [] are negative, otherwise the string will not be split
-                        string += '-' + split_expr[i+1] # Add the negative sign back in and add to current scan descriptor
-                        del split_expr[i+1] # Drop the extra element
+                    # This will only be triggered if the arguments of [] are negative, otherwise the string will not be split
+                    if string.endswith("ET["):
+                        # Add the negative sign back in and add to current scan descriptor
+                        string += '-' + split_expr[i+1]
+                        del split_expr[i+1]  # Drop the extra element
 
                     # Assign generic "val{i}" key to string literal in compliance with
                     # python supported syntax for variables
@@ -70,5 +71,4 @@ def math_stream(formula, data, arg, get_data, XAS_streams=None, is_XAS=False, ba
                 locals()[k] = numerator/mesh
 
     # Return the calculated result
-    code = parser.expr(formula).compile()
-    return eval(code)
+    return eval(formula)
