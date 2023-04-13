@@ -25,11 +25,12 @@ from .edges import EdgeDict
 # Data Processing Functions
 from .util import COLORP, all_list_entries_equal
 from .xeol import *
-from .add_subtract import ScanAddition, ScanSubtraction
+from .add_subtract import ScanAddition, ScanSubtraction, ImageAddition
 from .sca import loadSCAscans
 from .mca import loadMCAscans
 from .mesh import loadMeshScans
 from .rsxs_mcp import loadRSXS1dROIscans, loadRSXS2dROIscans, loadRSXSImageStack
+from .beamline_info import loadSCAbeamline, get_single_beamline_value
 
 #########################################################################################
 #########################################################################################
@@ -37,13 +38,14 @@ from .rsxs_mcp import loadRSXS1dROIscans, loadRSXS2dROIscans, loadRSXSImageStack
 
 class Load1d:
     """Class to load generic 1d (x,y) data."""
+
     def __init__(self):
         self.data = list()
         self.type = list()
         self.x_stream = list()
         self.filename = list()
-        self.plot_lim_x = [":",":"]
-        self.plot_lim_y = [":",":"]
+        self.plot_lim_x = [":", ":"]
+        self.plot_lim_y = [":", ":"]
         self.legend_loc = 'outside'
         self.plot_vlines = list()
         self.plot_hlines = list()
@@ -109,15 +111,16 @@ class Load1d:
         """
 
         # Set the defaults if not specified in **kwargs.
-        kwargs.setdefault("norm",True)
-        kwargs.setdefault("is_XAS",False)
+        kwargs.setdefault("norm", True)
+        kwargs.setdefault("is_XAS", False)
         # Append all REIXS scan objects to scan list in current object.
-        self.data.append(loadSCAscans(basedir, file, x_stream, y_stream, *args, **kwargs))
+        self.data.append(loadSCAscans(
+            basedir, file, x_stream, y_stream, *args, **kwargs))
         self.type.append(y_stream)
         self.x_stream.append(x_stream)
         self.filename.append(file)
 
-    def add(self, basedir, file, x_stream, y_stream, *args, **kwargs):       
+    def add(self, basedir, file, x_stream, y_stream, *args, **kwargs):
         """
         Add specified scans for selected streams.
 
@@ -128,11 +131,12 @@ class Load1d:
         """
 
         # Set the defaults if not specified in **kwargs.
-        kwargs.setdefault("norm",False)
-        kwargs.setdefault("avg",False)
-        kwargs.setdefault("is_XAS",False)
+        kwargs.setdefault("norm", False)
+        kwargs.setdefault("avg", False)
+        kwargs.setdefault("is_XAS", False)
         # Append all REIXS scan objects to scan list in current object.
-        self.data.append(ScanAddition(basedir, file, x_stream, y_stream, *args, **kwargs))
+        self.data.append(ScanAddition(
+            basedir, file, x_stream, y_stream, *args, **kwargs))
         self.x_stream.append(x_stream)
         self.type.append(y_stream)
         self.filename.append(file)
@@ -148,15 +152,16 @@ class Load1d:
 
         """
         # Set the defaults if not specified in **kwargs.
-        kwargs.setdefault("norm",False)
-        kwargs.setdefault("is_XAS",False)
+        kwargs.setdefault("norm", False)
+        kwargs.setdefault("is_XAS", False)
         # Append all REIXS scan objects to scan list in current object.
-        self.data.append(ScanSubtraction(basedir, file, x_stream, y_stream, *args, **kwargs))
+        self.data.append(ScanSubtraction(
+            basedir, file, x_stream, y_stream, *args, **kwargs))
         self.x_stream.append(x_stream)
         self.type.append(y_stream)
         self.filename.append(file)
 
-    def xlim(self,lower,upper):
+    def xlim(self, lower, upper):
         """
         Set x-axis plot window limits.
 
@@ -168,7 +173,7 @@ class Load1d:
         self.plot_lim_x[0] = lower
         self.plot_lim_x[1] = upper
 
-    def ylim(self,lower,upper):
+    def ylim(self, lower, upper):
         """
         Set y-axis plot window limits.
 
@@ -180,7 +185,7 @@ class Load1d:
         self.plot_lim_y[0] = lower
         self.plot_lim_y[1] = upper
 
-    def plot_legend(self,pos):
+    def plot_legend(self, pos):
         """
         Overwrite default legend position.
 
@@ -191,7 +196,7 @@ class Load1d:
         """
         self.legend_loc = pos
 
-    def vline(self,pos,**kwargs):
+    def vline(self, pos, **kwargs):
         """
         Draw a vertical line in the plot.
 
@@ -201,9 +206,9 @@ class Load1d:
         **kwargs : dict, optional
             See bokeh manual for available options.
         """
-        self.plot_vlines.append([pos,kwargs])
-    
-    def hline(self,pos,**kwargs):
+        self.plot_vlines.append([pos, kwargs])
+
+    def hline(self, pos, **kwargs):
         """
         Draw a horizontal line in the plot.
 
@@ -213,9 +218,9 @@ class Load1d:
         **kwargs : dict, optional
             See bokeh manual for available options.
         """
-        self.plot_hlines.append([pos,kwargs])
+        self.plot_hlines.append([pos, kwargs])
 
-    def label(self,pos_x,pos_y,text,**kwargs):
+    def label(self, pos_x, pos_y, text, **kwargs):
         """
         Draw a text box in the plot.
 
@@ -227,7 +232,7 @@ class Load1d:
         **kwargs : dict, optional
             See bokeh manual for available options.
         """
-        self.plot_labels.append([pos_x,pos_y,text,kwargs])
+        self.plot_labels.append([pos_x, pos_y, text, kwargs])
 
     def plot(self, linewidth=4, title=None, xlabel=None, ylabel=None, plot_height=450, plot_width=700):
         """
@@ -260,7 +265,7 @@ class Load1d:
         source = ColumnDataSource(plot_data)
 
         # Set up the bokeh plot
-        p = figure(height=plot_height,width=plot_width,
+        p = figure(height=plot_height, width=plot_width,
                    tools="pan,wheel_zoom,box_zoom,reset,crosshair,save")
         p.multi_line(xs='x_stream', ys='y_stream', legend_group="legend",
                      line_width=linewidth, line_color='color', line_alpha=0.6,
@@ -293,19 +298,22 @@ class Load1d:
         if self.plot_lim_x[1] != ':':
             p.x_range.end = self.plot_lim_x[1]
 
-        if len(self.plot_hlines)>0:
+        if len(self.plot_hlines) > 0:
             for line_props in self.plot_hlines:
-                line = Span(location=line_props[0],dimension='width',**line_props[1])
+                line = Span(location=line_props[0],
+                            dimension='width', **line_props[1])
                 p.add_layout(line)
 
-        if len(self.plot_vlines)>0:
+        if len(self.plot_vlines) > 0:
             for line_props in self.plot_vlines:
-                line = Span(location=line_props[0],dimension='height',**line_props[1])
+                line = Span(
+                    location=line_props[0], dimension='height', **line_props[1])
                 p.add_layout(line)
 
-        if len(self.plot_labels)>0:
+        if len(self.plot_labels) > 0:
             for label_props in self.plot_labels:
-                label = Label(x=label_props[0],y=label_props[1],text=label_props[2],**label_props[3])
+                label = Label(
+                    x=label_props[0], y=label_props[1], text=label_props[2], **label_props[3])
                 p.add_layout(label)
 
         if title != None:
@@ -397,55 +405,58 @@ class Load1d:
                             self.exportfile.selected_filename)
         self.export(file)
 
-## The following classes all inherit from Load1d and provide quick-access to frequently used spectroscopy.
+# The following classes all inherit from Load1d and provide quick-access to frequently used spectroscopy.
+
+
 class XASLoader(Load1d):
     def load(self, basedir, file, y_stream, *args, **kwargs):
         x_stream = 'Mono Energy'
-        kwargs.setdefault("norm",True)
+        kwargs.setdefault("norm", True)
         kwargs["is_XAS"] = True
-        super().load(basedir,file,x_stream,y_stream,*args,**kwargs)
+        super().load(basedir, file, x_stream, y_stream, *args, **kwargs)
 
     def plot(self, **kwargs):
-        kwargs.setdefault("title",'Absorption spectra normalized by mesh current')
-        kwargs.setdefault("xlabel","Incident Photon Energy (eV)")
+        kwargs.setdefault(
+            "title", 'Absorption spectra normalized by mesh current')
+        kwargs.setdefault("xlabel", "Incident Photon Energy (eV)")
         super().plot(**kwargs)
 
     def add(self, basedir, file, y_stream, *args, **kwargs):
         x_stream = "Mono Energy"
-        kwargs.setdefault("avg",True)
-        kwargs.setdefault("norm",True)
+        kwargs.setdefault("avg", True)
+        kwargs.setdefault("norm", True)
         kwargs["is_XAS"] = True
         super().add(basedir, file, x_stream, y_stream, *args, **kwargs)
 
     def subtract(self, basedir, file, y_stream, *args, **kwargs):
         x_stream = "Mono Energy"
-        kwargs.setdefault("norm",True)        
+        kwargs.setdefault("norm", True)
         kwargs["is_XAS"] = True
         super().subtract(basedir, file, x_stream, y_stream, *args, **kwargs)
 
 
 class XESLoader(Load1d):
     def load(self, basedir, file, y_stream, *args, **kwargs):
-        kwargs.setdefault("norm",False)
+        kwargs.setdefault("norm", False)
         x_stream = "MCP Energy"
         super().load(basedir, file, x_stream, y_stream, *
                      args, **kwargs)
 
     def plot(self, **kwargs):
-        kwargs.setdefault("title",'Summed MCP emission spectra')
-        kwargs.setdefault("xlabel","Uncalibrated MCP Energy (eV)")
-        kwargs.setdefault("ylabel","Counts (arb. units)")
+        kwargs.setdefault("title", 'Summed MCP emission spectra')
+        kwargs.setdefault("xlabel", "Uncalibrated MCP Energy (eV)")
+        kwargs.setdefault("ylabel", "Counts (arb. units)")
         super().plot(**kwargs)
 
     def add(self, basedir, file, y_stream, *args, **kwargs):
         x_stream = "MCP Energy"
-        kwargs.setdefault("avg",False)
-        kwargs.setdefault("norm",False)
+        kwargs.setdefault("avg", False)
+        kwargs.setdefault("norm", False)
         super().add(basedir, file, x_stream, y_stream, *args, **kwargs)
 
     def subtract(self, basedir, file, y_stream, *args, **kwargs):
         x_stream = "MCP Energy"
-        kwargs.setdefault("norm",False)
+        kwargs.setdefault("norm", False)
         super().subtract(basedir, file, x_stream, y_stream, *
                          args, **kwargs)
 
@@ -453,25 +464,25 @@ class XESLoader(Load1d):
 class XRFLoader(Load1d):
     def load(self, basedir, file, y_stream, *args, **kwargs):
         x_stream = "SDD Energy"
-        kwargs.setdefault("norm",False)
+        kwargs.setdefault("norm", False)
         super().load(basedir, file, x_stream, y_stream, *
                      args, **kwargs)
 
     def plot(self, **kwargs):
-        kwargs.setdefault("title",'Summed SDD emission spectra')
-        kwargs.setdefault("xlabel","Uncalibrated SDD Energy (eV)")
-        kwargs.setdefault("ylabel","Counts (arb. units)")
+        kwargs.setdefault("title", 'Summed SDD emission spectra')
+        kwargs.setdefault("xlabel", "Uncalibrated SDD Energy (eV)")
+        kwargs.setdefault("ylabel", "Counts (arb. units)")
         super().plot(**kwargs)
 
     def add(self, basedir, file, y_stream, *args, **kwargs):
         x_stream = "SDD Energy"
-        kwargs.setdefault("norm",False)
-        kwargs.setdefault("avg",False)
-        super().add(basedir, file, x_stream, y_stream, *args,**kwargs)
+        kwargs.setdefault("norm", False)
+        kwargs.setdefault("avg", False)
+        super().add(basedir, file, x_stream, y_stream, *args, **kwargs)
 
     def subtract(self, basedir, file, y_stream, *args, **kwargs):
         x_stream = "SDD Energy"
-        kwargs.setdefault("norm",False)
+        kwargs.setdefault("norm", False)
         super().subtract(basedir, file, x_stream, y_stream, *
                          args, **kwargs)
 
@@ -479,24 +490,24 @@ class XRFLoader(Load1d):
 class XEOLLoader(Load1d):
     def load(self, basedir, file, y_stream, *args, **kwargs):
         x_stream = "XEOL Energy"
-        kwargs.setdefault("norm",False)
+        kwargs.setdefault("norm", False)
         super().load(basedir, file, x_stream, y_stream, *args, **kwargs)
 
     def plot(self, **kwargs):
-        kwargs.setdefault("title",'Summed XEOL spectra')
-        kwargs.setdefault("xlabel","Uncalibrated XEOL Wavelength (nm)")
-        kwargs.setdefault("ylabel","Counts (arb. units)")
+        kwargs.setdefault("title", 'Summed XEOL spectra')
+        kwargs.setdefault("xlabel", "Uncalibrated XEOL Wavelength (nm)")
+        kwargs.setdefault("ylabel", "Counts (arb. units)")
         super().plot(**kwargs)
 
     def add(self, basedir, file, y_stream, *args, **kwargs):
         x_stream = "XEOL Energy"
-        kwargs.setdefault("norm",False)
-        kwargs.setdefault("avg",False)
+        kwargs.setdefault("norm", False)
+        kwargs.setdefault("avg", False)
         super().add(basedir, file, x_stream, y_stream, *args, **kwargs)
 
     def subtract(self, basedir, file, y_stream, *args, **kwargs):
         x_stream = "XEOL Energy"
-        kwargs.setdefault("norm",False)
+        kwargs.setdefault("norm", False)
         super().subtract(basedir, file, x_stream, y_stream, *args, **kwargs)
 
 
@@ -511,12 +522,11 @@ class Load2d:
         self.y_stream = list()
         self.detector = list()
         self.filename = list()
-        self.plot_lim_x = [":",":"]
-        self.plot_lim_y = [":",":"]
+        self.plot_lim_x = [":", ":"]
+        self.plot_lim_y = [":", ":"]
         self.plot_vlines = list()
         self.plot_hlines = list()
         self.plot_labels = list()
-
 
     def load(self, basedir, file, x_stream, y_stream, detector, *args, **kwargs):
         """
@@ -572,22 +582,23 @@ class Load2d:
         """
 
         # Set the defaults if not specified in **kwargs.
-        kwargs.setdefault("norm",False)
-        kwargs.setdefault("xoffset",None)
-        kwargs.setdefault("xcoffset",None)
-        kwargs.setdefault("yoffset",None)
-        kwargs.setdefault("ycoffset",None)
-        kwargs.setdefault("background",None)
-        kwargs.setdefault("grid_x",[None, None, None])
-        kwargs.setdefault("grid_y",[None, None, None])
-        kwargs.setdefault("energyloss",False)
+        kwargs.setdefault("norm", False)
+        kwargs.setdefault("xoffset", None)
+        kwargs.setdefault("xcoffset", None)
+        kwargs.setdefault("yoffset", None)
+        kwargs.setdefault("ycoffset", None)
+        kwargs.setdefault("background", None)
+        kwargs.setdefault("grid_x", [None, None, None])
+        kwargs.setdefault("grid_y", [None, None, None])
+        kwargs.setdefault("energyloss", False)
 
         # Ensure that only one scan is loaded.
         if len(args) != 1:
             raise TypeError("You may only select one scan at a time")
         if self.data != []:
             raise TypeError("You can only append one scan per object")
-        self.data.append(loadMCAscans(basedir, file, x_stream, y_stream, detector, *args, **kwargs))
+        self.data.append(loadMCAscans(basedir, file, x_stream,
+                         y_stream, detector, *args, **kwargs))
         self.x_stream.append(x_stream)
         self.y_stream.append(y_stream)
         self.detector.append(detector)
@@ -597,7 +608,40 @@ class Load2d:
             self.x_stream[-1] = "Energy loss (eV)"
             self.y_stream[-1] = "Mono Energy (eV)"
 
-    def xlim(self,lower,upper):
+    def add(self, basedir, file, x_stream, y_stream, detector, *args, **kwargs):
+        """
+        Add specified images for selected streams.
+
+        Parameters
+        ----------
+        See loader function.
+        Adds all scans specified in *args.
+        """
+
+        # Set the defaults if not specified in **kwargs.
+        kwargs.setdefault("norm", False)
+        kwargs.setdefault("xoffset", None)
+        kwargs.setdefault("xcoffset", None)
+        kwargs.setdefault("yoffset", None)
+        kwargs.setdefault("ycoffset", None)
+        kwargs.setdefault("background", None)
+        kwargs.setdefault("grid_x", [None, None, None])
+        kwargs.setdefault("grid_y", [None, None, None])
+        kwargs.setdefault("energyloss", False)
+
+        self.data.append(ImageAddition(basedir, file, x_stream,
+                         y_stream, detector, *args, **kwargs))
+        
+        self.x_stream.append(x_stream)
+        self.y_stream.append(y_stream)
+        self.detector.append(detector)
+        self.filename.append(file)
+
+        if kwargs['energyloss'] == True:
+            self.x_stream[-1] = "Energy loss (eV)"
+            self.y_stream[-1] = "Mono Energy (eV)"
+
+    def xlim(self, lower, upper):
         """
         Set x-axis plot window limits.
 
@@ -609,7 +653,7 @@ class Load2d:
         self.plot_lim_x[0] = lower
         self.plot_lim_x[1] = upper
 
-    def ylim(self,lower,upper):
+    def ylim(self, lower, upper):
         """
         Set y-axis plot window limits.
 
@@ -621,7 +665,7 @@ class Load2d:
         self.plot_lim_y[0] = lower
         self.plot_lim_y[1] = upper
 
-    def vline(self,pos,**kwargs):
+    def vline(self, pos, **kwargs):
         """
         Draw a vertical line in the plot.
 
@@ -631,9 +675,9 @@ class Load2d:
         **kwargs : dict, optional
             See bokeh manual for available options.
         """
-        self.plot_vlines.append([pos,kwargs])
-    
-    def hline(self,pos,**kwargs):
+        self.plot_vlines.append([pos, kwargs])
+
+    def hline(self, pos, **kwargs):
         """
         Draw a horizontal line in the plot.
 
@@ -643,9 +687,9 @@ class Load2d:
         **kwargs : dict, optional
             See bokeh manual for available options.
         """
-        self.plot_hlines.append([pos,kwargs])
+        self.plot_hlines.append([pos, kwargs])
 
-    def label(self,pos_x,pos_y,text,**kwargs):
+    def label(self, pos_x, pos_y, text, **kwargs):
         """
         Draw a text box in the plot.
 
@@ -657,9 +701,9 @@ class Load2d:
         **kwargs : dict, optional
             See bokeh manual for available options.
         """
-        self.plot_labels.append([pos_x,pos_y,text,kwargs])
+        self.plot_labels.append([pos_x, pos_y, text, kwargs])
 
-    def plot(self,title=None, xlabel=None, ylabel=None, plot_height=600, plot_width=600):
+    def plot(self, title=None, xlabel=None, ylabel=None, plot_height=600, plot_width=600):
         """Plot all data assosciated with class instance/object."""
 
         # Iterate over the one (1) scan in object - this is for legacy reason and shall be removed in the future.
@@ -667,7 +711,7 @@ class Load2d:
             for k, v in val.items():
 
                 # Create the figure
-                p = figure(height=plot_height,width=plot_width,tooltips=[("x", "$x"), ("y", "$y"), ("value", "@image")],
+                p = figure(height=plot_height, width=plot_width, tooltips=[("x", "$x"), ("y", "$y"), ("value", "@image")],
                            tools="pan,wheel_zoom,box_zoom,reset,hover,crosshair,save")
                 p.x_range.range_padding = p.y_range.range_padding = 0
 
@@ -675,8 +719,8 @@ class Load2d:
 
                 # must give a vector of image data for image parameter
                 color_mapper = LinearColorMapper(palette="Viridis256",
-                                                 low=v.detector.min(),
-                                                 high=v.detector.max())
+                                                 low=v.new_z.min(),
+                                                 high=v.new_z.max())
 
                 # Plot image and use limits as given by even grid.
                 p.image(image=[v.new_z], x=v.xmin, y=v.ymin, dw=v.xmax-v.xmin,
@@ -701,19 +745,22 @@ class Load2d:
                 if self.plot_lim_x[1] != ':':
                     p.x_range.end = self.plot_lim_x[1]
 
-                if len(self.plot_hlines)>0:
+                if len(self.plot_hlines) > 0:
                     for line_props in self.plot_hlines:
-                        line = Span(location=line_props[0],dimension='width',**line_props[1])
+                        line = Span(
+                            location=line_props[0], dimension='width', **line_props[1])
                         p.add_layout(line)
 
-                if len(self.plot_vlines)>0:
+                if len(self.plot_vlines) > 0:
                     for line_props in self.plot_vlines:
-                        line = Span(location=line_props[0],dimension='height',**line_props[1])
+                        line = Span(
+                            location=line_props[0], dimension='height', **line_props[1])
                         p.add_layout(line)
 
-                if len(self.plot_labels)>0:
+                if len(self.plot_labels) > 0:
                     for label_props in self.plot_labels:
-                        label = Label(x=label_props[0],y=label_props[1],text=label_props[2],**label_props[3])
+                        label = Label(
+                            x=label_props[0], y=label_props[1], text=label_props[2], **label_props[3])
                         p.add_layout(label)
 
             if title != None:
@@ -760,7 +807,7 @@ class Load2d:
                 f.write(
                     f"F~{self.filename[i]}_S{v.scan}_{self.detector[i]}_{self.x_stream[i]}_{self.y_stream[i]}\n")
                 f.write("========================\n")
-                
+
                 # Start writing string g
                 g.write("========================\n")
                 g.write(
@@ -797,11 +844,11 @@ class Load2d:
         # Copy string content to file with shutil.
         with open(f"{filename}.txt_scale", "a") as scales:
             f.seek(0)
-            shutil.copyfileobj(f,scales)
+            shutil.copyfileobj(f, scales)
 
         with open(f"{filename}.txt_matrix", "a") as matrix:
             g.seek(0)
-            shutil.copyfileobj(g,matrix)
+            shutil.copyfileobj(g, matrix)
 
         print(f"Successfully wrote Image data to {filename}.txt")
 
@@ -833,6 +880,7 @@ class Load2d:
 
 class EEMsLoader(Load2d):
     """Specific 2d loader for excitation-emission-maps."""
+
     def load(self, basedir, file, detector, *args, **kwargs):
         x_stream = 'Mono Energy'
 
@@ -863,27 +911,28 @@ class LoadMesh:
     def load(self, basedir, file, x_stream, y_stream, z_stream, *args, **kwargs):
 
         # Set the defaults if not specified in **kwargs.
-        kwargs.setdefault("norm",False)
-        kwargs.setdefault("xoffset",None)
-        kwargs.setdefault("xcoffset",None)
-        kwargs.setdefault("yoffset",None)
-        kwargs.setdefault("ycoffset",None)
-        kwargs.setdefault("background",None)
+        kwargs.setdefault("norm", False)
+        kwargs.setdefault("xoffset", None)
+        kwargs.setdefault("xcoffset", None)
+        kwargs.setdefault("yoffset", None)
+        kwargs.setdefault("ycoffset", None)
+        kwargs.setdefault("background", None)
         #kwargs.setdefault("grid_x",[None, None, None])
         #kwargs.setdefault("grid_y",[None, None, None])
 
-        self.data.append(loadMeshScans(basedir, file, x_stream, y_stream, z_stream, *args, **kwargs))
+        self.data.append(loadMeshScans(basedir, file, x_stream,
+                         y_stream, z_stream, *args, **kwargs))
         self.x_stream.append(x_stream)
         self.y_stream.append(y_stream)
         self.z_stream.append(z_stream)
         self.filename.append(file)
 
-    def plot(self,title=None, xlabel=None, ylabel=None, plot_height=600, plot_width=600):
+    def plot(self, title=None, xlabel=None, ylabel=None, plot_height=600, plot_width=600):
 
         for i, val in enumerate(self.data):
             for k, v in val.items():
 
-                p = figure(height=plot_height,width=plot_width,tooltips=[("x", "$x"), ("y", "$y"), ("value", "@image")],
+                p = figure(height=plot_height, width=plot_width, tooltips=[("x", "$x"), ("y", "$y"), ("value", "@image")],
                            tools="pan,wheel_zoom,box_zoom,reset,hover,crosshair,save")
                 p.x_range.range_padding = p.y_range.range_padding = 0
 
@@ -917,7 +966,7 @@ class LoadMesh:
                     p.xaxis.axis_label = str(self.x_stream[i])
                 if ylabel != None:
                     p.yaxis.axis_label = str(ylabel)
-                else:                
+                else:
                     p.yaxis.axis_label = f"{self.y_stream[i]}"
 
                 show(p)
@@ -952,11 +1001,11 @@ class LoadMesh:
 
         with open(f"{filename}.txt_scale", "a") as scales:
             f.seek(0)
-            shutil.copyfileobj(f,scales)
+            shutil.copyfileobj(f, scales)
 
         with open(f"{filename}.txt_matrix", "a") as matrix:
             g.seek(0)
-            shutil.copyfileobj(g,matrix)
+            shutil.copyfileobj(g, matrix)
 
         print(f"Successfully wrote Histogram data to {filename}.txt")
 
@@ -995,8 +1044,8 @@ class ImageROILoader():
         self.data = list()
         self.filename = list()
         self.norm = list()
-        self.plot_lim_x = [":",":"]
-        self.plot_lim_y = [":",":"]
+        self.plot_lim_x = [":", ":"]
+        self.plot_lim_y = [":", ":"]
         self.legend_loc = 'outside'
         self.plot_vlines = list()
         self.plot_hlines = list()
@@ -1008,7 +1057,7 @@ class ImageROILoader():
         self.norm.append(norm)
         self.filename.append(file)
 
-    def xlim(self,lower,upper):
+    def xlim(self, lower, upper):
         """
         Set x-axis plot window limits.
 
@@ -1020,7 +1069,7 @@ class ImageROILoader():
         self.plot_lim_x[0] = lower
         self.plot_lim_x[1] = upper
 
-    def ylim(self,lower,upper):
+    def ylim(self, lower, upper):
         """
         Set y-axis plot window limits.
 
@@ -1032,7 +1081,7 @@ class ImageROILoader():
         self.plot_lim_y[0] = lower
         self.plot_lim_y[1] = upper
 
-    def plot_legend(self,pos):
+    def plot_legend(self, pos):
         """
         Overwrite default legend position.
 
@@ -1043,7 +1092,7 @@ class ImageROILoader():
         """
         self.legend_loc = pos
 
-    def vline(self,pos,**kwargs):
+    def vline(self, pos, **kwargs):
         """
         Draw a vertical line in the plot.
 
@@ -1053,9 +1102,9 @@ class ImageROILoader():
         **kwargs : dict, optional
             See bokeh manual for available options.
         """
-        self.plot_vlines.append([pos,kwargs])
-    
-    def hline(self,pos,**kwargs):
+        self.plot_vlines.append([pos, kwargs])
+
+    def hline(self, pos, **kwargs):
         """
         Draw a horizontal line in the plot.
 
@@ -1065,9 +1114,9 @@ class ImageROILoader():
         **kwargs : dict, optional
             See bokeh manual for available options.
         """
-        self.plot_hlines.append([pos,kwargs])
+        self.plot_hlines.append([pos, kwargs])
 
-    def label(self,pos_x,pos_y,text,**kwargs):
+    def label(self, pos_x, pos_y, text, **kwargs):
         """
         Draw a text box in the plot.
 
@@ -1079,7 +1128,7 @@ class ImageROILoader():
         **kwargs : dict, optional
             See bokeh manual for available options.
         """
-        self.plot_labels.append([pos_x,pos_y,text,kwargs])
+        self.plot_labels.append([pos_x, pos_y, text, kwargs])
 
     def plot(self, linewidth=4, title='Image ROI', xlabel=None, ylabel='Counts (arb. units)', plot_height=450, plot_width=700):
         plot_data = defaultdict(list)
@@ -1100,7 +1149,7 @@ class ImageROILoader():
 
         source = ColumnDataSource(plot_data)
 
-        p = figure(height=plot_height,width=plot_width,
+        p = figure(height=plot_height, width=plot_width,
                    tools="pan,wheel_zoom,box_zoom,reset,crosshair,save")
         p.multi_line(xs='x_stream', ys='y_stream', legend_group="legend",
                      line_width=linewidth, line_color='color', line_alpha=0.6,
@@ -1131,19 +1180,22 @@ class ImageROILoader():
         if self.plot_lim_x[1] != ':':
             p.x_range.end = self.plot_lim_x[1]
 
-        if len(self.plot_hlines)>0:
+        if len(self.plot_hlines) > 0:
             for line_props in self.plot_hlines:
-                line = Span(location=line_props[0],dimension='width',**line_props[1])
+                line = Span(location=line_props[0],
+                            dimension='width', **line_props[1])
                 p.add_layout(line)
 
-        if len(self.plot_vlines)>0:
+        if len(self.plot_vlines) > 0:
             for line_props in self.plot_vlines:
-                line = Span(location=line_props[0],dimension='height',**line_props[1])
+                line = Span(
+                    location=line_props[0], dimension='height', **line_props[1])
                 p.add_layout(line)
 
-        if len(self.plot_labels)>0:
+        if len(self.plot_labels) > 0:
             for label_props in self.plot_labels:
-                label = Label(x=label_props[0],y=label_props[1],text=label_props[2],**label_props[3])
+                label = Label(
+                    x=label_props[0], y=label_props[1], text=label_props[2], **label_props[3])
                 p.add_layout(label)
 
         p.toolbar.logo = None
@@ -1228,8 +1280,8 @@ class StackROILoader():
         self.data = list()
         self.filename = list()
         self.norm = list()
-        self.plot_lim_x = [":",":"]
-        self.plot_lim_y = [":",":"]
+        self.plot_lim_x = [":", ":"]
+        self.plot_lim_y = [":", ":"]
         self.plot_vlines = list()
         self.plot_hlines = list()
         self.plot_labels = list()
@@ -1240,7 +1292,7 @@ class StackROILoader():
         self.norm.append(norm)
         self.filename.append(file)
 
-    def xlim(self,lower,upper):
+    def xlim(self, lower, upper):
         """
         Set x-axis plot window limits.
 
@@ -1252,7 +1304,7 @@ class StackROILoader():
         self.plot_lim_x[0] = lower
         self.plot_lim_x[1] = upper
 
-    def ylim(self,lower,upper):
+    def ylim(self, lower, upper):
         """
         Set y-axis plot window limits.
 
@@ -1264,7 +1316,7 @@ class StackROILoader():
         self.plot_lim_y[0] = lower
         self.plot_lim_y[1] = upper
 
-    def vline(self,pos,**kwargs):
+    def vline(self, pos, **kwargs):
         """
         Draw a vertical line in the plot.
 
@@ -1274,9 +1326,9 @@ class StackROILoader():
         **kwargs : dict, optional
             See bokeh manual for available options.
         """
-        self.plot_vlines.append([pos,kwargs])
-    
-    def hline(self,pos,**kwargs):
+        self.plot_vlines.append([pos, kwargs])
+
+    def hline(self, pos, **kwargs):
         """
         Draw a horizontal line in the plot.
 
@@ -1286,9 +1338,9 @@ class StackROILoader():
         **kwargs : dict, optional
             See bokeh manual for available options.
         """
-        self.plot_hlines.append([pos,kwargs])
+        self.plot_hlines.append([pos, kwargs])
 
-    def label(self,pos_x,pos_y,text,**kwargs):
+    def label(self, pos_x, pos_y, text, **kwargs):
         """
         Draw a text box in the plot.
 
@@ -1300,13 +1352,13 @@ class StackROILoader():
         **kwargs : dict, optional
             See bokeh manual for available options.
         """
-        self.plot_labels.append([pos_x,pos_y,text,kwargs])
-        
+        self.plot_labels.append([pos_x, pos_y, text, kwargs])
+
     def plot(self, title=None, xlabel=None, ylabel=None, plot_height=600, plot_width=600):
         for i, val in enumerate(self.data):
             for k, v in val.items():
 
-                p = figure(height=plot_height,width=plot_width,tooltips=[("x", "$x"), ("y", "$y"), ("value", "@image")],
+                p = figure(height=plot_height, width=plot_width, tooltips=[("x", "$x"), ("y", "$y"), ("value", "@image")],
                            tools="pan,wheel_zoom,box_zoom,reset,hover,crosshair,save")
                 p.x_range.range_padding = p.y_range.range_padding = 0
 
@@ -1335,19 +1387,22 @@ class StackROILoader():
                 if self.plot_lim_x[1] != ':':
                     p.x_range.end = self.plot_lim_x[1]
 
-                if len(self.plot_hlines)>0:
+                if len(self.plot_hlines) > 0:
                     for line_props in self.plot_hlines:
-                        line = Span(location=line_props[0],dimension='width',**line_props[1])
+                        line = Span(
+                            location=line_props[0], dimension='width', **line_props[1])
                         p.add_layout(line)
 
-                if len(self.plot_vlines)>0:
+                if len(self.plot_vlines) > 0:
                     for line_props in self.plot_vlines:
-                        line = Span(location=line_props[0],dimension='height',**line_props[1])
+                        line = Span(
+                            location=line_props[0], dimension='height', **line_props[1])
                         p.add_layout(line)
 
-                if len(self.plot_labels)>0:
+                if len(self.plot_labels) > 0:
                     for label_props in self.plot_labels:
-                        label = Label(x=label_props[0],y=label_props[1],text=label_props[2],**label_props[3])
+                        label = Label(
+                            x=label_props[0], y=label_props[1], text=label_props[2], **label_props[3])
                         p.add_layout(label)
 
             if title != None:
@@ -1370,7 +1425,7 @@ class StackROILoader():
     def get_data(self):
         f = io.StringIO()
         g = io.StringIO()
-        
+
         for i, val in enumerate(self.data):
             for k, v in val.items():
                 f.write("========================\n")
@@ -1398,11 +1453,11 @@ class StackROILoader():
 
         with open(f"{filename}.txt_scale", "a") as scales:
             f.seek(0)
-            shutil.copyfileobj(f,scales)
+            shutil.copyfileobj(f, scales)
 
         with open(f"{filename}.txt_matrix", "a") as matrix:
             g.seek(0)
-            shutil.copyfileobj(g,matrix)
+            shutil.copyfileobj(g, matrix)
 
         print(f"Successfully wrote Image data to {filename}.txt")
 
@@ -1455,7 +1510,7 @@ class ImageStackLoader():
 
         for i, val in enumerate(self.data):
             for k, v in val.items():
-                p = figure(height=plot_height,width=plot_width,tooltips=[("x", "$x"), ("y", "$y"), ("value", "@image")],
+                p = figure(height=plot_height, width=plot_width, tooltips=[("x", "$x"), ("y", "$y"), ("value", "@image")],
                            tools="pan,wheel_zoom,box_zoom,reset,hover,crosshair,save")
                 p.x_range.range_padding = p.y_range.range_padding = 0
 
@@ -1493,3 +1548,53 @@ class ImageStackLoader():
 
                 s = show(p, notebook_handle=True)
                 display(widgets.interact(update, f=(0, len(v.imagemca)-1)))
+
+#########################################################################################
+
+
+class LoadBeamline(Load1d):
+    def load(self, basedir, file, key, **kwargs):
+        """
+        Load one or multiple specific scan(s) for selected streams.
+
+        Parameters
+        ----------
+        basedir : string
+            Specifiy the absolute or relative path to experimental data.
+        file : string
+            Specify the file name (either ASCII or HDF5).
+        key : string
+        **kwargs: multiple, optional
+            Options:
+                norm : boolean
+                    Norm the spectra to [0,1].
+                    default: True
+                xoffset : list of tuples
+                    Offset the x-axis by applying a polynomial fit.
+                    default: None
+                xcoffset : float
+                    Offset x-axis by constant value.
+                    default : None 
+                yoffset : list of tuples
+                    Offset the y-axis by applying a polynomial fit.
+                    default : None 
+                ycoffset : float
+                    Offset y-axis by constant value.
+                    default : None
+        """
+
+        # Append all REIXS scan objects to scan list in current object.
+        self.data.append(loadSCAbeamline(basedir, file, key, **kwargs))
+        self.type.append(key)
+        self.x_stream.append('Scan Number')
+        self.filename.append(file)
+
+    def add(*args):
+        raise UserWarning('Undefined')
+
+    def subtract(*args):
+        raise UserWarning('Undefined')
+
+
+def getBL(basedir, file, stream, *args):
+    get_single_beamline_value(basedir, file, stream, *args)
