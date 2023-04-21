@@ -311,3 +311,72 @@ def ImageAddition(basedir, file, x_stream, y_stream, detector, *args, norm=True,
         data[0].MASTER_detector =  data[0].MASTER_detector / max(data[0].MASTER_detector)
 
     return data
+
+def ImageSubtraction(basedir, file, x_stream, y_stream, detector, *args, norm=True, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None,grid_x=[None, None, None],grid_y=[None, None,None], background=None, energyloss=False):
+    """Internal function to handle image addition.
+
+    Parameters
+    ----------
+    args : Same as for the Load2d class
+    kwargs: See Load2d class
+    """
+
+   # Define generic object in which all data will be stored
+    class added_object:
+        def __init__(self):
+            pass
+
+    # Ensure we only add a unique scan once
+    for i in args:
+        if args.count(i) > 1:
+            raise ValueError("Cannot add the same scan to itself")
+
+    # Get the appropriate data first - same loader as always
+    Scandata =  loadMCAscans(basedir, file, x_stream, y_stream, detector, *args, norm=False, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset,grid_x=[None, None, None],grid_y=[None, None, None], background=background, energyloss=False)
+
+    # Iterate over all loaded scans
+    for i, (k, v) in enumerate(Scandata.items()):
+    # Set the first scan as master data
+        if i == 0:
+            MASTER_x_stream = v.new_x
+            MASTER_y_stream = v.new_y
+            MASTER_detector = v.new_z
+            MASTER_xmin = v.xmin
+            MASTER_xmax = v.xmax
+            MASTER_ymin = v.ymin
+            MASTER_ymax = v.ymax
+            name = str(k)+'+'
+        else:
+            # Ensure that we only add emission scans when the spectrometer energy scale is identical
+            if not np.array_equal(MASTER_y_stream, v.new_y):
+                    raise ValueError(
+                        "Cannot add spectra with different energy scales.")
+            
+            interp = interp2d(v.new_x,v.new_y,v.new_z)
+            new_z = interp(MASTER_x_stream,MASTER_y_stream)
+
+            MASTER_detector = np.subtract(MASTER_detector,new_z)
+            
+            name += "_" + str(k)
+
+    if energyloss == True or grid_x!=[None, None, None] or grid_y!=[None, None,None]:
+        MASTER_xmin, MASTER_xmax, MASTER_ymin, MASTER_ymax, MASTER_x_stream, MASTER_y_stream, MASTER_detector = grid_data2d(MASTER_x_stream, MASTER_y_stream, MASTER_detector, grid_x=grid_x,grid_y=grid_y,energyloss=energyloss)
+
+    # Place data in a dictionary with the same structure as a regular Load1d call, so that we can plot it
+    data = dict()
+    data[0] = added_object()
+    data[0].new_x = MASTER_x_stream
+    data[0].new_y = MASTER_y_stream
+    data[0].new_z = MASTER_detector
+    data[0].xmin = MASTER_xmin
+    data[0].xmax = MASTER_xmax
+    data[0].ymin = MASTER_ymin
+    data[0].ymax = MASTER_ymax
+
+    data[0].scan = name
+
+    # Normalize data to [0,1]
+    if norm == True:
+        data[0].MASTER_detector =  data[0].MASTER_detector / max(data[0].MASTER_detector)
+
+    return data

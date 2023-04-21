@@ -25,7 +25,7 @@ from .edges import EdgeDict
 # Data Processing Functions
 from .util import COLORP, all_list_entries_equal
 from .xeol import *
-from .add_subtract import ScanAddition, ScanSubtraction, ImageAddition
+from .add_subtract import ScanAddition, ScanSubtraction, ImageAddition, ImageSubtraction
 from .sca import loadSCAscans
 from .mca import loadMCAscans
 from .mesh import loadMeshScans
@@ -641,6 +641,41 @@ class Load2d:
             self.x_stream[-1] = "Energy loss (eV)"
             self.y_stream[-1] = "Mono Energy (eV)"
 
+    def subtract(self, basedir, file, x_stream, y_stream, detector, *args, **kwargs):
+        """
+        Subtract specified images for selected streams.
+
+        Parameters
+        ----------
+        See loader function.
+        Subtracts all imnages from the first element.
+
+        """
+        # Set the defaults if not specified in **kwargs.
+        # Set the defaults if not specified in **kwargs.
+        kwargs.setdefault("norm", False)
+        kwargs.setdefault("xoffset", None)
+        kwargs.setdefault("xcoffset", None)
+        kwargs.setdefault("yoffset", None)
+        kwargs.setdefault("ycoffset", None)
+        kwargs.setdefault("background", None)
+        kwargs.setdefault("grid_x", [None, None, None])
+        kwargs.setdefault("grid_y", [None, None, None])
+        kwargs.setdefault("energyloss", False)
+
+        # Append all REIXS scan objects to scan list in current object.
+        self.data.append(ImageSubtraction(basedir, file, x_stream,
+                         y_stream, detector, *args, **kwargs))
+        
+        self.x_stream.append(x_stream)
+        self.y_stream.append(y_stream)
+        self.detector.append(detector)
+        self.filename.append(file)
+
+        if kwargs['energyloss'] == True:
+            self.x_stream[-1] = "Energy loss (eV)"
+            self.y_stream[-1] = "Mono Energy (eV)"
+
     def xlim(self, lower, upper):
         """
         Set x-axis plot window limits.
@@ -881,19 +916,33 @@ class Load2d:
 class EEMsLoader(Load2d):
     """Specific 2d loader for excitation-emission-maps."""
 
-    def load(self, basedir, file, detector, *args, **kwargs):
-        x_stream = 'Mono Energy'
-
+    def get_scale(self, detector):
         if detector == "MCP":
-            y_stream = "MCP Energy"
+            return "MCP Energy"
         elif detector == "SDD":
-            y_stream = "SDD Energy"
+            return "SDD Energy"
         elif detector == "XEOL":
-            y_stream = "XEOL Energy"
+            return "XEOL Energy"
         else:
             raise TypeError("Detector not defined.")
 
+    def load(self, basedir, file, detector, *args, **kwargs):
+        x_stream = 'Mono Energy'
+        y_stream = self.get_scale(detector)
+
         super().load(basedir, file, x_stream, y_stream, detector, *args, **kwargs)
+
+    def add(self, basedir, file, detector, *args, **kwargs):
+        x_stream = "Mono Energy"
+        y_stream = self.get_scale(detector)
+
+        super().add(basedir, file, x_stream, y_stream, detector, *args, **kwargs)
+
+    def subtract(self, basedir, file, detector, *args, **kwargs):
+        x_stream = "Mono Energy"
+        y_stream = self.get_scale(detector)
+
+        super().subtract(basedir, file, x_stream, y_stream, detector, *args, **kwargs)
 
 #########################################################################################
 
