@@ -349,8 +349,11 @@ class REIXS_HDF5(object):
                                 info_dict[key][int(
                                     k.split("_")[1])] = f[f'{k}/{key}'][()].decode("utf-8")
                             except AttributeError:
+                                entry = f[f'{k}/{key}'][()]
+                                if isinstance(entry, np.ndarray) and len(entry)==1:
+                                    entry = entry[0]
                                 info_dict[key][int(
-                                    k.split("_")[1])] = f[f'{k}/{key}'][()]
+                                    k.split("_")[1])] = entry
 
         except:
             raise KeyError("Error opening and processing file.")
