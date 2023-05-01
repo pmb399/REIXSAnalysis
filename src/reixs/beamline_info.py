@@ -24,7 +24,7 @@ def loadSCAbeamline(basedir, file, key, norm=False, xoffset=None, xcoffset=None,
     if legend_item != None:
         data[0].legend = legend_item
     else:
-        data[0].legend = f"{file}"
+        data[0].legend = f"{file} - {key}"
 
     # Apply normalization to [0,1]
     if norm == True:
