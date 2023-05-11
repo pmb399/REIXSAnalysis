@@ -334,8 +334,10 @@ class Load1d:
         files : list
             List of all loaded files.
         """
-        df = pd.DataFrame()
+        
         files = list()
+        series_data = list()
+        series_header = list()
 
         # Iterate over all "load" calls
         for i, val in enumerate(self.data):
@@ -346,14 +348,16 @@ class Load1d:
                     files.append(name)
                 fileindex = files.index(name)
 
-                s1 = pd.Series(
-                    v.x_stream, name=f"F{fileindex+1}_S{v.scan}_I{i+1}-{self.x_stream[i]}")
-                df = df.append(s1)
-                s2 = pd.Series(
-                    v.y_stream, name=f"F{fileindex+1}_S{v.scan}_I{i+1}-{self.type[i]}")
-                df = df.append(s2)
+                # Append the x_stream data and header name
+                series_data.append(pd.Series(v.x_stream))
+                series_header.append(f"F{fileindex+1}_S{v.scan}_I{i+1}-{self.x_stream[i]}")
 
-        dfT = df.transpose(copy=True)
+                # Append the y_stream data and header name
+                series_data.append(pd.Series(v.y_stream))
+                series_header.append(f"F{fileindex+1}_S{v.scan}_I{i+1}-{self.type[i]}")
+
+        dfT = pd.DataFrame(series_data).transpose(copy=True)
+        dfT.columns = series_header
 
         return dfT, files
 
@@ -823,16 +827,18 @@ class Load2d:
         f : string.IO object
             Motor and Detector Scales. Pandas Data Series.
             1) Rewind memory with f.seek(0)
-            2) Load with pandas.from_csv(object)
+            2) Load with pandas.read_csv(f,skiprows=3)
         g : string.IO object
             Actual gridded detector image.
             1) Rewind memory with g.seek(0)
-            2) Load with numpy.genfromtxt(object)
+            2) Load with numpy.genfromtxt(g,skip_header=4)
         """
         # Set up the data frame and the two string objects for export
-        df = pd.DataFrame()
         f = io.StringIO()
         g = io.StringIO()
+        series_data = list()
+        series_header = list()
+
         for i, val in enumerate(self.data):
             for k, v in val.items():
                 # Gridded scales now calculated directly during the MCA load and only need to be referenced here
@@ -850,13 +856,16 @@ class Load2d:
                 g.write("========================\n")
 
                 # Append data to string now.
-                s1 = pd.Series(
-                    v.new_x, name="Motor Scale Gridded")
-                df = df.append(s1)
-                s2 = pd.Series(
-                    v.new_y, name="Detector Scale Gridded")
-                df = df.append(s2)
-                dfT = df.transpose(copy=True)
+                # Append x-stream
+                series_data.append( pd.Series(v.new_x))
+                series_header.append("Motor Scale Gridded")
+
+                # Append y-stream
+                series_data.append(pd.Series(v.new_y))
+                series_header.append("Detector Scale Gridded")
+
+                dfT = pd.DataFrame(series_data).transpose(copy=True)
+                dfT.columns = series_header
                 dfT.to_csv(f, index=False, line_terminator='\n')
 
                 g.write("=== Image ===\n")
@@ -1263,8 +1272,10 @@ class ImageROILoader():
         show(p)
 
     def get_data(self):
-        df = pd.DataFrame()
+        
         files = list()
+        series_data = list()
+        series_header = list()
 
         for i, val in enumerate(self.data):
             for k, v in val.items():
@@ -1274,14 +1285,16 @@ class ImageROILoader():
                 fileindex = files.index(name)
 
                 for image, imagevalue in v.caxis.items():
-                    s1 = pd.Series(
-                        imagevalue, name=f"F{fileindex+1}_S{v.scan}_I{i+1}_Img{image}-{v.caxis_label}")
-                    df = df.append(s1)
-                    s2 = pd.Series(
-                        v.imagesca[image], name=f"F{fileindex+1}_S{v.scan}_I{i+1}_Img{image}_Counts")
-                    df = df.append(s2)
+                    # Append the x stream
+                    series_data.append(pd.Series(imagevalue))
+                    series_header.append(f"F{fileindex+1}_S{v.scan}_I{i+1}_Img{image}-{v.caxis_label}")
 
-        dfT = df.transpose(copy=True)
+                    # Append the y stream
+                    series_data.append(pd.Series(v.imagesca[image]))
+                    series_header.append(f"F{fileindex+1}_S{v.scan}_I{i+1}_Img{image}_Counts")
+
+        dfT = pd.DataFrame(series_data).transpose(copy=True)
+        dfT.columns = series_header
 
         return dfT, files
 
