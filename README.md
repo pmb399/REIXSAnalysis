@@ -2,7 +2,7 @@
 
 This is a library to analyse, plot, and export REIXS beamline data. The package is meant to provide a framework to load data into jupyter and enable data interaction.
 
-Further [beamline information](https://reixs.leightsource.ca/) is available on the Website of the Canadian Light Source.
+Further [beamline information](https://reixs.lightsource.ca/) is available on the Website of the Canadian Light Source.
 
 ## Installation
 
