@@ -6,7 +6,7 @@ from scipy.interpolate import interp1d, interp2d
 # Plotting
 from bokeh.io import push_notebook
 from bokeh.plotting import show, figure
-from bokeh.models import ColumnDataSource, HoverTool, LinearColorMapper, ColorBar, Span, Label
+from bokeh.models import ColumnDataSource, HoverTool, LinearColorMapper, LogColorMapper, ColorBar, Span, Label
 
 # Utilities
 import os
@@ -244,6 +244,8 @@ class Load1d:
         title : string, optional
         xlabel : string, optional
         ylabel : string, optional
+        plot_height : int, optional
+        plot_width : int, optional
         """
 
         # Organize all data assosciated with object in sorted dictionary.
@@ -742,9 +744,24 @@ class Load2d:
         """
         self.plot_labels.append([pos_x, pos_y, text, kwargs])
 
-    def plot(self, title=None, kind='Image', xlabel=None, ylabel=None, plot_height=600, plot_width=600):
-        """Plot all data assosciated with class instance/object."""
+    def plot(self, title=None, kind='Image', xlabel=None, ylabel=None, plot_height=600, plot_width=600, 
+            vmin=None, vmax=None, colormap = "linear"):
+        """
+        Plot all data assosciated with class instance/object.
 
+        Parameters
+        ----------
+        title : string, optional
+        kind : string, optional
+        xlabel : string, optional
+        ylabel : string, optional
+        plot_height : int, optional
+        plot_width : int, optional
+        vmin : float, optional
+        vmax : float, optional
+        colormap : string
+            Use: "linear" or "log"
+        """
         # Iterate over the one (1) scan in object - this is for legacy reason and shall be removed in the future.
         for i, val in enumerate(self.data):
             for k, v in val.items():
@@ -757,9 +774,26 @@ class Load2d:
                 # Gridded scales now calculated directly during the MCA load and only need to be referenced here
 
                 # must give a vector of image data for image parameter
-                color_mapper = LinearColorMapper(palette="Viridis256",
-                                                 low=v.new_z.min(),
-                                                 high=v.new_z.max())
+                if vmin == None:
+                    mapper_low = v.new_z.min()
+                else:
+                    mapper_low = vmin
+
+                if vmax == None:
+                    mapper_high = v.new_z.max()
+                else:
+                    mapper_high = vmax
+
+                if colormap == "linear":
+                    myMapper = LinearColorMapper
+                elif colormap == "log":
+                    myMapper = LogColorMapper
+                else:
+                    raise UserWarning("Only 'linear' and 'log' implemented.")
+
+                color_mapper = myMapper(palette="Viridis256",
+                                                 low=mapper_low,
+                                                 high=mapper_high)
 
                 # Plot image and use limits as given by even grid.
                 p.image(image=[v.new_z], x=v.xmin, y=v.ymin, dw=v.xmax-v.xmin,
