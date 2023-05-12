@@ -742,7 +742,7 @@ class Load2d:
         """
         self.plot_labels.append([pos_x, pos_y, text, kwargs])
 
-    def plot(self, title=None, xlabel=None, ylabel=None, plot_height=600, plot_width=600):
+    def plot(self, title=None, kind='Image', xlabel=None, ylabel=None, plot_height=600, plot_width=600):
         """Plot all data assosciated with class instance/object."""
 
         # Iterate over the one (1) scan in object - this is for legacy reason and shall be removed in the future.
@@ -805,7 +805,7 @@ class Load2d:
             if title != None:
                 p.title.text = str(title)
             else:
-                p.title.text = f'{self.detector[i]} Image for Scan {k}'
+                p.title.text = f'{self.detector[i]} {kind} for Scan {k}'
             if xlabel != None:
                 p.xaxis.axis_label = str(xlabel)
             else:
@@ -956,7 +956,7 @@ class EEMsLoader(Load2d):
 #########################################################################################
 
 
-class LoadMesh:
+class LoadMesh(Load2d):
     """Class to display (x,y,z) scatter data."""
 
     def __init__(self):
@@ -965,6 +965,14 @@ class LoadMesh:
         self.y_stream = list()
         self.z_stream = list()
         self.filename = list()
+        self.plot_lim_x = [":", ":"]
+        self.plot_lim_y = [":", ":"]
+        self.plot_vlines = list()
+        self.plot_hlines = list()
+        self.plot_labels = list()
+
+        # Use this so we can inherit from Load2d for plotting
+        self.detector = self.z_stream
 
     def load(self, basedir, file, x_stream, y_stream, z_stream, *args, **kwargs):
 
@@ -985,49 +993,16 @@ class LoadMesh:
         self.z_stream.append(z_stream)
         self.filename.append(file)
 
-    def plot(self, title=None, xlabel=None, ylabel=None, plot_height=600, plot_width=600):
+    def add(self):
+        raise UserWarning("Functionality not yet implemented.")
+    
+    def subtract(self):
+        raise UserWarning("Functionality not yet implemented.")
+    
+    def plot(self, *args, **kwargs):
+        kwargs.setdefault('kind', "Histogram")
 
-        for i, val in enumerate(self.data):
-            for k, v in val.items():
-
-                p = figure(height=plot_height, width=plot_width, tooltips=[("x", "$x"), ("y", "$y"), ("value", "@image")],
-                           tools="pan,wheel_zoom,box_zoom,reset,hover,crosshair,save")
-                p.x_range.range_padding = p.y_range.range_padding = 0
-
-                # Have the gridded data ready now from loader
-
-                # must give a vector of image data for image parameter
-                color_mapper = LinearColorMapper(palette="Viridis256",
-                                                 low=v.zmin,
-                                                 high=v.zmax)
-
-                p.image(image=[v.new_z], x=v.xmin, y=v.ymin, dw=v.xmax-v.xmin,
-                        dh=v.ymax-v.ymin, color_mapper=color_mapper, level="image")
-                p.grid.grid_line_width = 0.5
-
-                # Defining properties of color mapper
-                color_bar = ColorBar(color_mapper=color_mapper,
-                                     label_standoff=12,
-                                     location=(0, 0),
-                                     title='Counts')
-                p.add_layout(color_bar, 'right')
-
-                p.toolbar.logo = None
-
-                if title != None:
-                    p.title.text = str(title)
-                else:
-                    p.title.text = f'{self.z_stream[i]} Histogram for Scan {k}'
-                if xlabel != None:
-                    p.xaxis.axis_label = str(xlabel)
-                else:
-                    p.xaxis.axis_label = str(self.x_stream[i])
-                if ylabel != None:
-                    p.yaxis.axis_label = str(ylabel)
-                else:
-                    p.yaxis.axis_label = f"{self.y_stream[i]}"
-
-                show(p)
+        super().plot(*args, **kwargs)
 
     def get_data(self):
         f = io.StringIO()
@@ -1045,10 +1020,10 @@ class LoadMesh:
                     f"F~{self.filename[i]}_S{v.scan}_{self.z_stream[i]}_{self.x_stream[i]}_{self.y_stream[i]}\n")
                 g.write("========================\n")
 
-                f.write("=== x-axis bins ===\n")
-                np.savetxt(f, v.new_x)
-                f.write("=== y-axis bins ===\n")
-                np.savetxt(f, v.new_y)
+                f.write("=== x-axis bin edges ===\n")
+                np.savetxt(f, v.xedge)
+                f.write("=== y-axis bin edges ===\n")
+                np.savetxt(f, v.yedge)
                 g.write("=== Histogram ===\n")
                 np.savetxt(g, v.new_z, fmt="%.9g")
         return f, g
@@ -1066,30 +1041,6 @@ class LoadMesh:
             shutil.copyfileobj(g, matrix)
 
         print(f"Successfully wrote Histogram data to {filename}.txt")
-
-    def exporter(self):
-        current_dir = os.path.dirname(os.path.realpath("__file__"))
-
-        self.exportfile = FileChooser(current_dir)
-        self.exportfile.use_dir_icons = True
-        #self.exportfile.filter_pattern = '*.txt'
-
-        button = widgets.Button(
-            description='Save data file',
-            disabled=False,
-            button_style='info',  # 'success', 'info', 'warning', 'danger' or ''
-            tooltip='Save data to file',
-            icon='save'  # (FontAwesome names without the `fa-` prefix)
-        )
-
-        button.on_click(self.exportWidgetStep)
-        display(self.exportfile, button)
-
-    def exportWidgetStep(self, my):
-        file = os.path.join(self.exportfile.selected_path,
-                            self.exportfile.selected_filename)
-        self.export(file)
-
 
 class MeshLoader(LoadMesh):
     pass
