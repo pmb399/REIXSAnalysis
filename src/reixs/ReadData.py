@@ -133,11 +133,11 @@ class REIXS_HDF5(object):
 
                     try:
                         my.xeol_data = np.array(
-                            f[f'{my.scan}/{self.REIXSconfig["HDF5_xeol_data"]}'], dtype=np.float)
+                            f[f'{my.scan}/{self.REIXSconfig["HDF5_xeol_data"]}'])
                         my.xeol_energy = np.array(
                             f[f'{my.scan}/{self.REIXSconfig["HDF5_xeol_energy"]}'])
                         my.xeol_background = np.array(
-                            f[f'{my.scan}/{self.REIXSconfig["HDF5_xeol_background"]}'], dtype=np.float)
+                            f[f'{my.scan}/{self.REIXSconfig["HDF5_xeol_background"]}'])
 
                     except:
                         warnings.warn(
