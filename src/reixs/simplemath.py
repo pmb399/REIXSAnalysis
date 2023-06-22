@@ -164,6 +164,20 @@ def grid_data_mesh(x_data,y_data,z_data):
     zmin = z_data.min()
     zmax = z_data.max()
 
+    if xmin == x_data[0] and xmax == x_data[-1]:
+        pass
+    else:
+        print("You likely scanned backwards. Converting image axis...")
+        xmax = x_data.min()
+        xmin = x_data.max()
+
+    if ymin == y_data[0] and ymax == y_data[-1]:
+        pass
+    else:
+        print("You likely scanned backwards. Converting image axis...")
+        ymax = y_data.min()
+        ymin = y_data.max()
+
     xunique = np.unique(x_data)
     yunique = np.unique(y_data)
 
