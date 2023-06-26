@@ -186,6 +186,7 @@ def grid_data_mesh(x_data,y_data,z_data):
 
     new_z, xedge, yedge = np.histogram2d(x_data, y_data, bins=[xbin, ybin], range=[
                                             [xmin, xmax], [ymin, ymax]], weights=z_data)
+    new_z = np.transpose(new_z)
 
     return xmin, xmax, ymin, ymax, xedge, yedge, new_z, zmin, zmax
 
