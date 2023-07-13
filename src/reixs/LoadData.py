@@ -234,7 +234,7 @@ class Load1d:
         """
         self.plot_labels.append([pos_x, pos_y, text, kwargs])
 
-    def plot(self, linewidth=4, title=None, xlabel=None, ylabel=None, plot_height=450, plot_width=700):
+    def plot(self, linewidth=4, title=None, xlabel=None, ylabel=None, plot_height=450, plot_width=700, y_axis_type='linear'):
         """
         Plot all data assosciated with class instance/object.
 
@@ -267,7 +267,7 @@ class Load1d:
         source = ColumnDataSource(plot_data)
 
         # Set up the bokeh plot
-        p = figure(height=plot_height, width=plot_width,
+        p = figure(height=plot_height, width=plot_width,y_axis_type=y_axis_type,
                    tools="pan,wheel_zoom,box_zoom,reset,crosshair,save")
         p.multi_line(xs='x_stream', ys='y_stream', legend_group="legend",
                      line_width=linewidth, line_color='color', line_alpha=0.6,
