@@ -6,9 +6,9 @@ from .simplemath import apply_offset, grid_data, apply_savgol, bin_data
 import warnings
 import numpy as np
 from .parser import math_stream
+from shapely.geometry import Point, Polygon
 
-
-def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, energyloss=None, grid_x=[None, None, None], savgol=None, binsize=None, legend_items={}):
+def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=False, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None, background=None, energyloss=None, grid_x=[None, None, None], savgol=None, binsize=None, legend_items={}, polygon=None):
     """Internal function to load MCA data
     
         Parameters
@@ -18,9 +18,9 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
 
     # Define special streams that are calculated internally
     special_streams = ['TEY', 'TFY', 'PFY', 'iPFY', 'XES', 'rXES', 'specPFY',
-                       'XRF', 'rXRF', 'XEOL', 'rXEOL', 'POY', 'TOY', 'EY', 'Sample', 'Mesh', 'ET', 'rLOSS']  # all special inputs
+                       'XRF', 'rXRF', 'XEOL', 'rXEOL', 'POY', 'TOY', 'EY', 'Sample', 'Mesh', 'ET', 'rLOSS', 'pXES']  # all special inputs
     XAS_streams = ['TEY', 'TFY', 'PFY', 'iPFY', 'specPFY', 'POY',
-                   'TOY', 'rXES', 'rXRF', 'rXEOL', 'ET', 'rLOSS']  # All that are normalized to mesh
+                   'TOY', 'rXES', 'rXRF', 'rXEOL', 'ET', 'rLOSS','pXES']  # All that are normalized to mesh
 
     # Note that the data dict only gets populated locally until the appropriate
     # singular y stream is return -- Assignment of y_stream happens after evaluation
@@ -143,6 +143,31 @@ def loadSCAscans(basedir, file, x_stream, y_stream, *args, norm=True, is_XAS=Fal
 
                 # Store the corresponding new energy loss scale (gridded for even image spacing in eems 2d)
                 data[arg].energy_loss_gridded = energy_transfer
+
+                return y_data
+            
+            elif doesMatchPattern(y_stream, ['pXES']):
+                # This is to integrate over an constant incident energy region -- probes constant intermediate states
+                poly = Polygon(polygon)
+
+                # Utilize 2d EEMs to convert excitation emission map
+                from .mca import loadMCAscans
+                
+                mca = loadMCAscans(basedir, file, 'Mono Energy', 'MCP Energy', 'MCP', arg, norm=norm, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset, background=background, grid_x=grid_x)
+                x_data = mca[arg].x_data
+                y_data = mca[arg].y_data
+                detector = mca[arg].detector
+               
+                pXES = list()
+                for x_idx,x in enumerate(x_data):
+                    y_sum = 0
+                    for y_idx,y in enumerate(y_data):
+                        p = Point(x,y)
+                        if poly.contains(p):
+                            y_sum += detector[y_idx,x_idx]
+                    pXES.append(y_sum)
+
+                y_data = np.array(pXES)
 
                 return y_data
 
