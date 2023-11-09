@@ -5,7 +5,7 @@ from .mca import loadMCAscans
 from .simplemath import apply_offset, apply_savgol, grid_data2d
 import warnings
 
-def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None,energyloss=None,grid_x=[None,None,None],savgol=None,binsize=None,legend_item=None):
+def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None,energyloss=None,grid_x=[None,None,None],savgol=None,binsize=None,legend_item=None, polygon=None):
     """Internal function to handle scan addition.
 
         Parameters
@@ -30,7 +30,7 @@ def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False,
 
     # Get the appropriate data first - same loader as always
     Scandata = loadSCAscans(basedir, file, x_stream, y_stream, *args,
-                            norm=False, is_XAS=is_XAS, background=background,energyloss=None,grid_x=grid_x,binsize=binsize)
+                            norm=False, is_XAS=is_XAS, background=background,energyloss=None,grid_x=grid_x,binsize=binsize, polygon=polygon)
 
     # Iterate over all loaded scans
     for i, (k, v) in enumerate(Scandata.items()):
@@ -114,7 +114,7 @@ def ScanAddition(basedir, file, x_stream, y_stream, *args, avg=True, norm=False,
     return data
 
 
-def ScanSubtraction(basedir, file, x_stream, y_stream, *args, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None,energyloss=None,grid_x=[None,None,None], savgol=None,binsize=None, legend_item=None):
+def ScanSubtraction(basedir, file, x_stream, y_stream, *args, norm=False, is_XAS=False, background=None, xoffset=None, xcoffset=None, yoffset=None, ycoffset=None,energyloss=None,grid_x=[None,None,None], savgol=None,binsize=None, legend_item=None, polygon=None):
     """Internal function to handle scan subtraction.
         New: May handle subtraction from two lists (addition within lists)
 
@@ -138,8 +138,8 @@ def ScanSubtraction(basedir, file, x_stream, y_stream, *args, norm=False, is_XAS
     # Allows to define two lists
     # Add all scans within the two lists, then subtract results from each other
     if len(args) == 2 and type(args[0])==list and type(args[1])==list:
-        minuend = ScanAddition(basedir, file, x_stream, y_stream, *args[0], avg=False, norm=norm, is_XAS=is_XAS, background=background, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset,energyloss=energyloss,grid_x=grid_x,savgol=savgol,binsize=binsize)
-        subtrahend = ScanAddition(basedir, file, x_stream, y_stream, *args[1], avg=False, norm=norm, is_XAS=is_XAS, background=background, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset,energyloss=energyloss,grid_x=grid_x,savgol=savgol,binsize=binsize)
+        minuend = ScanAddition(basedir, file, x_stream, y_stream, *args[0], avg=False, norm=norm, is_XAS=is_XAS, background=background, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset,energyloss=energyloss,grid_x=grid_x,savgol=savgol,binsize=binsize, polygon=polygon)
+        subtrahend = ScanAddition(basedir, file, x_stream, y_stream, *args[1], avg=False, norm=norm, is_XAS=is_XAS, background=background, xoffset=xoffset, xcoffset=xcoffset, yoffset=yoffset, ycoffset=ycoffset,energyloss=energyloss,grid_x=grid_x,savgol=savgol,binsize=binsize, polygon=polygon)
 
         # Define the first scan (addition of scans as master)
         MASTER_x_stream = minuend[0].x_stream
@@ -167,7 +167,7 @@ def ScanSubtraction(basedir, file, x_stream, y_stream, *args, norm=False, is_XAS
     else:
         # Get the appropriate data first
         Scandata = loadSCAscans(basedir, file, x_stream, y_stream, *args,
-                                norm=False, is_XAS=is_XAS, background=background,energyloss=None,grid_x=grid_x,binsize=binsize)
+                                norm=False, is_XAS=is_XAS, background=background,energyloss=None,grid_x=grid_x,binsize=binsize, polygon=polygon)
 
         # Iterate over all requested scans, load them, and subtract.
         # Same as above.
