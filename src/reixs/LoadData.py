@@ -382,7 +382,7 @@ class Load1d:
             string += '\n'
             f.write(string)
             # Write pandas dataframe to file.
-            dfT.to_csv(f, index=False, line_terminator='\n')
+            dfT.to_csv(f, index=False, lineterminator='\n')
 
         print(f"Successfully wrote DataFrame to {filename}.csv")
 
@@ -900,7 +900,7 @@ class Load2d:
 
                 dfT = pd.DataFrame(series_data).transpose(copy=True)
                 dfT.columns = series_header
-                dfT.to_csv(f, index=False, line_terminator='\n')
+                dfT.to_csv(f, index=False, lineterminator='\n')
 
                 g.write("=== Image ===\n")
                 np.savetxt(g, v.new_z, fmt="%.9g")
@@ -1293,7 +1293,7 @@ class ImageROILoader():
                 string += f"F{idx+1} {file},"
             string += '\n'
             f.write(string)
-            dfT.to_csv(f, index=False, line_terminator='\n')
+            dfT.to_csv(f, index=False, lineterminator='\n')
 
         # dfT.to_csv(f"{filename}.csv",index=False)
         print(f"Successfully wrote DataFrame to {filename}.csv")
