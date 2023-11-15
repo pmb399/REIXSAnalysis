@@ -706,7 +706,11 @@ class REIXS_ASCII(object):
             mnemonics_header = list()
             # Do the motors first
             for entry in header_list[0:epoch_index]:
-                mnemonics_header.append(self.mnemonic2name_motors[entry])
+                try:
+                    mnemonics_header.append(self.mnemonic2name_motors[entry])
+                except KeyError:
+                    if entry in ["H","K","L"]:
+                        mnemonics_header.append(entry)
             # Now append Epoch
             mnemonics_header.append("Epoch")
             # Do the counters last
