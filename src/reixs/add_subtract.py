@@ -308,7 +308,7 @@ def ImageAddition(basedir, file, x_stream, y_stream, detector, *args, norm=True,
 
     # Normalize data to [0,1]
     if norm == True:
-        data[0].MASTER_detector =  data[0].MASTER_detector / max(data[0].MASTER_detector)
+        data[0].new_z =  data[0].new_z / data[0].new_z.max()
 
     return data
 
@@ -377,6 +377,6 @@ def ImageSubtraction(basedir, file, x_stream, y_stream, detector, *args, norm=Tr
 
     # Normalize data to [0,1]
     if norm == True:
-        data[0].MASTER_detector =  data[0].MASTER_detector / max(data[0].MASTER_detector)
+        data[0].new_z =  data[0].new_z / data[0].new_z.max()
 
     return data
