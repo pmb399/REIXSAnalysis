@@ -1,4 +1,4 @@
-# CLS REIXS Analysis
+# CLS REIXS Analysis [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.11970889.svg)](https://doi.org/10.5281/zenodo.11970889)
 
 This is a library to analyse, plot, and export REIXS beamline data. The package is meant to provide a framework to load data into jupyter and enable data interaction.
 
